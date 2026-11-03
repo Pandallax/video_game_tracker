@@ -46,6 +46,17 @@ class BaserowClient:
             raise BaserowError(resp.status_code, resp.text)
         return resp.json()
 
+    async def batch_create_rows(self, table_id: int, rows: list[dict]) -> list[dict]:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                f"{self._base_url}/api/database/rows/table/{table_id}/batch/",
+                headers=self._headers,
+                json={"items": rows},
+            )
+        if resp.status_code not in (200, 201):
+            raise BaserowError(resp.status_code, resp.text)
+        return resp.json()["items"]
+
     async def get_row(self, table_id: int, row_id: int) -> dict | None:
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.get(
