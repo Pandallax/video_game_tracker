@@ -89,5 +89,15 @@ class BaserowClient:
         if resp.status_code != 204:
             raise BaserowError(resp.status_code, resp.text)
 
+    async def batch_delete_rows(self, table_id: int, row_ids: list[int]) -> None:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                f"{self._base_url}/api/database/rows/table/{table_id}/batch-delete/",
+                headers=self._headers,
+                json={"items": row_ids},
+            )
+        if resp.status_code != 204:
+            raise BaserowError(resp.status_code, resp.text)
+
 
 baserow_client = BaserowClient()
