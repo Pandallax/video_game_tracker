@@ -40,7 +40,8 @@ cd backend
 - **Games** (table 1374): Title, Platform, Target, Upgrade to (self-link),
   per-condition prices -- Loose Price (disc only), CIB Price (complete in
   box), Sealed Price, Box Only Price, Manual Only Price --
-  Price updated (date, stamped by the app whenever any price changes), CIB Requires (Disc/Case/Manual -- which components count as
+  Price updated (date, stamped by the app when a saved edit changes any
+  price -- edits made directly in Baserow don't update it), CIB Requires (Disc/Case/Manual -- which components count as
   "Complete In Box" for this title), UPC, Cover URL, Completionator URL,
   Notes. Platinum Hits / other editions get their own row with `Upgrade to`
   pointing at the base edition; `Target` is off unless that specific printing
@@ -68,8 +69,13 @@ The Dashboard has a "Scan UPC" button that opens the phone camera
 adding a copy. Camera access needs a secure context, which is why the VM
 serves `:8081` over TLS (see Deploy below).
 
-Cover URL is filled in by hand: click a game's thumbnail on the Games page
-and paste an image link (or edit the field in Baserow). Each game also links to a PriceCharting search for that
+Games page rows are read-only; click Edit on a row to change its title,
+platform, target, prices, UPC, CIB requirements or cover image URL, then Save
+(or Cancel). Saving sends only what changed, and Price updated is set to
+today only if one of the prices actually changed.
+
+Cover URL is filled in by hand: Edit the game on the Games page and paste an
+image link (or edit the field in Baserow). Each game also links to a PriceCharting search for that
 title and console.
 
 `scripts/import_completionator.py` compares saved pages of a Completionator

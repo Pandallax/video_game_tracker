@@ -5,13 +5,24 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.auth.deps import require_auth
 from app.baserow import field_ids as f
 from app.baserow.client import BaserowError, baserow_client
-from app.schemas import GameCreate, GameOut, GamePrices, GameUpdate, game_row_to_out, normalize_upc, price_fields
+from app.schemas import (
+    GameCreate,
+    GameOut,
+    GamePrices,
+    GameUpdate,
+    changed_price_fields,
+    game_row_to_out,
+    normalize_upc,
+    price_fields,
+)
 
 router = APIRouter(prefix="/api/games", tags=["games"], dependencies=[Depends(require_auth)])
 
 
-def _set_prices(values: dict, prices: GamePrices) -> None:
-    """Write the price kinds that were sent (null clears one) and stamp Price updated."""
+def _set_prices(values: dict, prices: GamePrices, current_row: dict | None = None) -> None:
+    """Write the price kinds that were sent (null clears one), and stamp Price
+    updated if any of them differs from `current_row` (the game as it is now;
+    None for a new game)."""
     sent = prices.model_fields_set
     if not sent:
         return
@@ -22,9 +33,9 @@ def _set_prices(values: dict, prices: GamePrices) -> None:
             status_code=400,
             detail=f"Price field(s) not configured in Baserow (see field_ids.py): {', '.join(missing)}",
         )
-    for kind in sent:
-        values[fields[kind]] = getattr(prices, kind)
-    if f.G_PRICE_UPDATED:
+    new_prices = {fields[kind]: getattr(prices, kind) for kind in sent}
+    values.update(new_prices)
+    if f.G_PRICE_UPDATED and changed_price_fields(current_row, new_prices):
         values[f.G_PRICE_UPDATED] = date.today().isoformat()
 
 
@@ -101,8 +112,11 @@ async def update_game(game_id: int, body: GameUpdate):
         values[f.G_TARGET] = body.target
     if body.upgrade_to_id is not None:
         values[f.G_UPGRADE_TO] = [body.upgrade_to_id] if body.upgrade_to_id else []
-    if body.prices is not None:
-        _set_prices(values, body.prices)
+    if body.prices is not None and body.prices.model_fields_set:
+        current = await baserow_client.get_row(f.TABLE_GAMES, game_id)
+        if current is None:
+            raise HTTPException(status_code=404, detail="Game not found")
+        _set_prices(values, body.prices, current)
     if body.cib_requires is not None:
         values[f.G_CIB_REQUIRES] = _cib_option_ids(body.cib_requires)
     if body.upc is not None:

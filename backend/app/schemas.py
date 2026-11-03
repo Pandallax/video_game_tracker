@@ -20,6 +20,25 @@ def price_fields() -> dict[str, str | None]:
     }
 
 
+def _as_price(value) -> float | None:
+    return float(value) if value not in (None, "") else None
+
+
+def changed_price_fields(old: dict | None, new: dict) -> list[str]:
+    """Price field ids whose value differs between two Games rows (or row
+    fragments). Baserow returns numbers as strings like "12.00", so compare
+    numerically. Fields missing from `new` are treated as unchanged; with no
+    `old` row (a new game), any price that is set counts as a change."""
+    changed = []
+    for field in price_fields().values():
+        if not field or field not in new:
+            continue
+        before = _as_price((old or {}).get(field))
+        if _as_price(new[field]) != before:
+            changed.append(field)
+    return changed
+
+
 class GamePrices(BaseModel):
     """Market prices by condition. On update, only the kinds that are sent are
     changed; send null to clear one."""
@@ -168,8 +187,7 @@ def normalize_upc(upc: str) -> str:
 
 
 def _number(row: dict, field: str | None) -> float | None:
-    value = row.get(field) if field else None
-    return float(value) if value not in (None, "") else None
+    return _as_price(row.get(field)) if field else None
 
 
 def game_row_to_out(row: dict) -> GameOut:
