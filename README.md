@@ -38,7 +38,8 @@ cd backend
 ## Data model (Baserow database "Game Tracker", id 339)
 
 - **Games** (table 1374): Title, Platform, Target, Upgrade to (self-link),
-  Target price, Notes. Platinum Hits / other editions get their own row with
+  Market price, Price updated (date, stamped by the app whenever Market price
+  changes), CIB Requires, Cover URL, Notes. Platinum Hits / other editions get their own row with
   `Upgrade to` pointing at the base edition; `Target` is off unless that
   specific printing is the one being chased.
 - **Copies** (table 1375): Copy ID, Game (link), Status (Collection / For Sale
@@ -48,6 +49,12 @@ cd backend
   price, Fees, Shipping cost, Net (formula).
 
 Completion stats only count `Collection` copies of `Target`-flagged games.
+
+Cover art comes from IGDB: `scripts/fetch_igdb_covers.py` matches each game
+by title + platform and fills Cover URL (see the script's docstring for the
+Twitch/IGDB credential setup). Click a thumbnail on the Games page to paste a
+different image URL. Each game also links to a PriceCharting search for that
+title and console.
 
 See `scripts/discover_baserow.py` to re-dump the current field/table IDs if
 the schema changes (`backend/app/baserow/field_ids.py` is hand-synced from it).

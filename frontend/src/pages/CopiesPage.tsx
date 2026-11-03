@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { listGames, type Game } from '../api/games'
+import { Cover } from '../components/Cover'
 import { createCopy, deleteCopy, listCopies, updateCopy, STATUSES, type Copy, type CopyStatus } from '../api/copies'
 
 export function CopiesPage() {
@@ -20,6 +21,8 @@ export function CopiesPage() {
   const [purchasePrice, setPurchasePrice] = useState('')
   const [purchasedFrom, setPurchasedFrom] = useState('')
   const [location, setLocation] = useState('')
+
+  const coverByGameId = new Map(games.map((g) => [g.id, g.cover_url]))
 
   const refresh = () => listCopies(statusFilter ? { status: statusFilter } : undefined).then(setCopies)
 
@@ -170,6 +173,7 @@ export function CopiesPage() {
         <table className="data-table">
           <thead>
             <tr>
+              <th></th>
               <th>Copy ID</th>
               <th>Game</th>
               <th>Status</th>
@@ -183,6 +187,13 @@ export function CopiesPage() {
           <tbody>
             {copies.map((c) => (
               <tr key={c.id}>
+                <td>
+                  <Cover
+                    url={c.game_id != null ? coverByGameId.get(c.game_id) : null}
+                    title={c.game_title ?? ''}
+                    size="thumb"
+                  />
+                </td>
                 <td>{c.copy_id}</td>
                 <td>{c.game_title}</td>
                 <td>

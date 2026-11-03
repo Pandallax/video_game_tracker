@@ -12,7 +12,9 @@ class GameOut(BaseModel):
     target: bool
     upgrade_to_id: int | None
     market_price: float | None
+    price_updated: str | None
     cib_requires: list[str]
+    cover_url: str | None
     notes: str
 
 
@@ -23,6 +25,7 @@ class GameCreate(BaseModel):
     upgrade_to_id: int | None = None
     market_price: float | None = None
     cib_requires: list[str] = list(CIB_COMPONENTS)
+    cover_url: str | None = None
     notes: str = ""
 
 
@@ -33,6 +36,8 @@ class GameUpdate(BaseModel):
     upgrade_to_id: int | None = None
     market_price: float | None = None
     cib_requires: list[str] | None = None
+    # Empty string clears the cover.
+    cover_url: str | None = None
     notes: str | None = None
 
 
@@ -132,7 +137,9 @@ def game_row_to_out(row: dict) -> GameOut:
         target=bool(row.get(f.G_TARGET)),
         upgrade_to_id=upgrade[0]["id"] if upgrade else None,
         market_price=float(row[f.G_MARKET_PRICE]) if row.get(f.G_MARKET_PRICE) else None,
+        price_updated=row.get(f.G_PRICE_UPDATED) if f.G_PRICE_UPDATED else None,
         cib_requires=cib_requires,
+        cover_url=(row.get(f.G_COVER_URL) or None) if f.G_COVER_URL else None,
         notes=row.get(f.G_NOTES) or "",
     )
 

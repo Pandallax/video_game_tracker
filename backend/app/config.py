@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     app_username: str
     app_password: str
     session_secret: str
+    # Only needed by scripts/fetch_igdb_covers.py (Twitch developer app credentials).
+    igdb_client_id: str = ""
+    igdb_client_secret: str = ""
 
 
 settings = Settings()
