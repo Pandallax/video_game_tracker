@@ -5,11 +5,13 @@ import {
   listGames,
   updateGame,
   PLATFORMS,
+  priceChartingUrl,
   CIB_COMPONENTS,
   type Game,
   type Platform,
   type CibComponent,
 } from '../api/games'
+import { Cover } from '../components/Cover'
 
 export function GamesPage() {
   const [games, setGames] = useState<Game[]>([])
@@ -72,6 +74,21 @@ export function GamesPage() {
     refresh()
   }
 
+  const saveMarketPrice = async (game: Game, raw: string) => {
+    const next = raw.trim() === '' ? null : Number(raw)
+    if (next !== null && Number.isNaN(next)) return
+    if (next === game.market_price) return
+    await updateGame(game.id, { market_price: next })
+    refresh()
+  }
+
+  const editCover = async (game: Game) => {
+    const url = window.prompt(`Cover image URL for ${game.title} (leave empty to clear)`, game.cover_url ?? '')
+    if (url === null) return
+    await updateGame(game.id, { cover_url: url.trim() })
+    refresh()
+  }
+
   const handleDelete = async (id: number) => {
     await deleteGame(id)
     refresh()
@@ -131,10 +148,12 @@ export function GamesPage() {
         <table className="data-table">
           <thead>
             <tr>
+              <th></th>
               <th>Title</th>
               <th>Platform</th>
               <th>Target</th>
               <th>Market price</th>
+              <th>Price updated</th>
               <th>UPC</th>
               <th>CIB requires</th>
               <th></th>
@@ -143,12 +162,42 @@ export function GamesPage() {
           <tbody>
             {games.map((g) => (
               <tr key={g.id}>
-                <td>{g.title}</td>
+                <td>
+                  <button className="cover-button" onClick={() => editCover(g)} title="Change cover">
+                    <Cover url={g.cover_url} title={g.title} size="thumb" />
+                  </button>
+                </td>
+                <td>
+                  {g.title}{' '}
+                  <a className="ext-link" href={priceChartingUrl(g)} target="_blank" rel="noreferrer">
+                    PriceCharting ↗
+                  </a>
+                  {g.completionator_url && (
+                    <>
+                      {' '}
+                      <a className="ext-link" href={g.completionator_url} target="_blank" rel="noreferrer">
+                        Completionator ↗
+                      </a>
+                    </>
+                  )}
+                </td>
                 <td>{g.platform}</td>
                 <td>
                   <input type="checkbox" checked={g.target} onChange={() => toggleTarget(g)} />
                 </td>
-                <td>{g.market_price != null ? `$${g.market_price.toFixed(2)}` : '—'}</td>
+                <td>
+                  <input
+                    key={`${g.id}-${g.market_price}`}
+                    className="price-input"
+                    type="number"
+                    step="0.01"
+                    placeholder="—"
+                    defaultValue={g.market_price ?? ''}
+                    onBlur={(e) => saveMarketPrice(g, e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                  />
+                </td>
+                <td className="muted">{g.price_updated ?? '—'}</td>
                 <td>
                   <input
                     className="upc-cell"

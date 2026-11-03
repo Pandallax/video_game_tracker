@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth.deps import require_auth
@@ -6,6 +8,18 @@ from app.baserow.client import BaserowError, baserow_client
 from app.schemas import GameCreate, GameOut, GameUpdate, game_row_to_out, normalize_upc
 
 router = APIRouter(prefix="/api/games", tags=["games"], dependencies=[Depends(require_auth)])
+
+
+def _set_market_price(values: dict, price: float | None) -> None:
+    values[f.G_MARKET_PRICE] = price
+    if f.G_PRICE_UPDATED:
+        values[f.G_PRICE_UPDATED] = date.today().isoformat()
+
+
+def _set_cover(values: dict, cover_url: str) -> None:
+    if not f.G_COVER_URL:
+        raise HTTPException(status_code=400, detail="Cover URL field is not configured (see field_ids.py)")
+    values[f.G_COVER_URL] = cover_url.strip()
 
 
 def _cib_option_ids(components: list[str]) -> list[int]:
@@ -47,13 +61,16 @@ async def create_game(body: GameCreate):
         f.G_TITLE: body.title,
         f.G_PLATFORM: f.PLATFORM_OPTIONS[body.platform],
         f.G_TARGET: body.target,
-        f.G_MARKET_PRICE: body.market_price,
         f.G_CIB_REQUIRES: _cib_option_ids(body.cib_requires),
         f.G_UPC: body.upc,
         f.G_NOTES: body.notes,
     }
     if body.upgrade_to_id is not None:
         values[f.G_UPGRADE_TO] = [body.upgrade_to_id]
+    if body.market_price is not None:
+        _set_market_price(values, body.market_price)
+    if body.cover_url:
+        _set_cover(values, body.cover_url)
 
     row = await baserow_client.create_row(f.TABLE_GAMES, values)
     return game_row_to_out(row)
@@ -72,12 +89,14 @@ async def update_game(game_id: int, body: GameUpdate):
         values[f.G_TARGET] = body.target
     if body.upgrade_to_id is not None:
         values[f.G_UPGRADE_TO] = [body.upgrade_to_id] if body.upgrade_to_id else []
-    if body.market_price is not None:
-        values[f.G_MARKET_PRICE] = body.market_price
+    if "market_price" in body.model_fields_set:
+        _set_market_price(values, body.market_price)
     if body.cib_requires is not None:
         values[f.G_CIB_REQUIRES] = _cib_option_ids(body.cib_requires)
     if body.upc is not None:
         values[f.G_UPC] = body.upc
+    if body.cover_url is not None:
+        _set_cover(values, body.cover_url)
     if body.notes is not None:
         values[f.G_NOTES] = body.notes
 

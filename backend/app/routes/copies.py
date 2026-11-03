@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 
 from app.auth.deps import require_auth
 from app.baserow import field_ids as f
 from app.baserow.client import BaserowError, baserow_client
+from app.photos import MAX_UPLOAD_BYTES, PhotoError, to_webp
 from app.schemas import CopyCreate, CopyOut, CopyUpdate, copy_row_to_out
 
 router = APIRouter(prefix="/api/copies", tags=["copies"], dependencies=[Depends(require_auth)])
@@ -104,6 +105,10 @@ async def update_copy(copy_id: int, body: CopyUpdate):
     if body.notes is not None:
         values[f.C_NOTES] = body.notes
 
+    return await _save_copy(copy_id, values)
+
+
+async def _save_copy(copy_id: int, values: dict) -> CopyOut:
     try:
         row = await baserow_client.update_row(f.TABLE_COPIES, copy_id, values)
     except BaserowError as exc:
@@ -114,6 +119,33 @@ async def update_copy(copy_id: int, body: CopyUpdate):
     linked = row.get(f.C_GAME) or []
     cib_requires = await _cib_requires_for_game(linked[0]["id"]) if linked else None
     return copy_row_to_out(row, cib_requires)
+
+
+def _photo_field() -> str:
+    if not f.C_PHOTO:
+        raise HTTPException(status_code=400, detail="Photo field is not configured (see field_ids.py)")
+    return f.C_PHOTO
+
+
+@router.put("/{copy_id}/photo", response_model=CopyOut)
+async def upload_photo(copy_id: int, file: UploadFile):
+    """Replace the copy's photo. The image is re-encoded to WebP before it's stored."""
+    field = _photo_field()
+    content = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail=f"Photo is larger than {MAX_UPLOAD_BYTES // 1_000_000} MB")
+    try:
+        webp = to_webp(content)
+    except PhotoError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    uploaded = await baserow_client.upload_file(f"copy-{copy_id}.webp", webp, "image/webp")
+    return await _save_copy(copy_id, {field: [{"name": uploaded["name"]}]})
+
+
+@router.delete("/{copy_id}/photo", response_model=CopyOut)
+async def delete_photo(copy_id: int):
+    return await _save_copy(copy_id, {_photo_field(): []})
 
 
 @router.delete("/{copy_id}", status_code=204)

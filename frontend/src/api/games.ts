@@ -13,8 +13,12 @@ export interface Game {
   target: boolean
   upgrade_to_id: number | null
   market_price: number | null
+  /** ISO date the market price was last changed through the app. */
+  price_updated: string | null
   cib_requires: CibComponent[]
   upc: string
+  cover_url: string | null
+  completionator_url: string | null
   notes: string
 }
 
@@ -37,6 +41,8 @@ export interface GameUpdate {
   market_price?: number | null
   cib_requires?: CibComponent[]
   upc?: string
+  /** Empty string clears the cover. */
+  cover_url?: string
   notes?: string
 }
 
@@ -56,4 +62,18 @@ export const getGameByUpc = async (upc: string): Promise<Game | null> => {
     if (err instanceof ApiError && err.status === 404) return null
     throw err
   }
+}
+
+const PRICECHARTING_CONSOLE: Record<Platform, string> = {
+  'OG Xbox': 'Xbox',
+  'Xbox 360': 'Xbox 360',
+  'Xbox One': 'Xbox One',
+  'Xbox Series X|S': 'Xbox Series X',
+}
+
+/** PriceCharting search for this game; it usually jumps straight to the product page. */
+export const priceChartingUrl = (game: Game) => {
+  const title = game.title.replace(/\s*\((platinum|greatest) hits\)\s*$/i, '')
+  const q = [title, game.platform ? PRICECHARTING_CONSOLE[game.platform] : ''].join(' ').trim()
+  return `https://www.pricecharting.com/search-products?type=prices&q=${encodeURIComponent(q)}`
 }

@@ -38,16 +38,44 @@ cd backend
 ## Data model (Baserow database "Game Tracker", id 339)
 
 - **Games** (table 1374): Title, Platform, Target, Upgrade to (self-link),
-  Target price, Notes. Platinum Hits / other editions get their own row with
-  `Upgrade to` pointing at the base edition; `Target` is off unless that
-  specific printing is the one being chased.
+  Market price, Price updated (date, stamped by the app whenever Market price
+  changes), CIB Requires (Disc/Case/Manual -- which components count as
+  "Complete In Box" for this title), UPC, Cover URL, Completionator URL,
+  Notes. Platinum Hits / other editions get their own row with `Upgrade to`
+  pointing at the base edition; `Target` is off unless that specific printing
+  is the one being chased.
 - **Copies** (table 1375): Copy ID, Game (link), Status (Collection / For Sale
-  / Sold), Condition, Purchase price, Purchase date, Purchased from, Location,
-  Notes. First copy of a title goes to Collection; duplicates go For Sale.
+  / Sold), Sealed, Has Disc / Disc Quality, Has Case / Case Quality, Has
+  Manual / Manual Quality (1-10 each), Purchase price, Purchase date,
+  Purchased from, Location, Notes, Photo (file). Completeness ("Complete In
+  Box", "Disc + Case", etc.) and overall quality are computed from the
+  components present, checked against the linked game's CIB Requires -- not
+  stored directly. First copy of a title goes to Collection; duplicates go
+  For Sale.
 - **Sales** (table 1376): Sale ID, Copy (link), Sold on, Sale date, Sale
   price, Fees, Shipping cost, Net (formula).
 
 Completion stats only count `Collection` copies of `Target`-flagged games.
+
+The Dashboard has a "Scan UPC" button that opens the phone camera
+(`@zxing/browser`) to look up a game by its barcode and jump straight to
+adding a copy. Camera access needs a secure context, which is why the VM
+serves `:8081` over TLS (see Deploy below).
+
+Cover URL is filled in by hand: click a game's thumbnail on the Games page
+and paste an image link (or edit the field in Baserow). Each game also links to a PriceCharting search for that
+title and console.
+
+`scripts/import_completionator.py` compares saved pages of a Completionator
+checklist (no export exists, so save each page from the browser) against the
+Games table, and can add missing games/editions, fill Market price from the
+checklist's loose/complete/new prices, and store each game's Completionator
+link. It only writes a report unless given flags; see its docstring.
+
+Copies can have their own photo (Copies page: click the thumbnail). Uploads
+are resized to at most 1600px and re-encoded as WebP at 85% quality
+(`backend/app/photos.py`) before being stored in Baserow; that photo is shown
+in place of the game's cover art wherever the copy appears.
 
 See `scripts/discover_baserow.py` to re-dump the current field/table IDs if
 the schema changes (`backend/app/baserow/field_ids.py` is hand-synced from it).
@@ -57,6 +85,13 @@ the schema changes (`backend/app/baserow/field_ids.py` is hand-synced from it).
 - systemd unit `video-game-tracker-backend.service` runs uvicorn on
   `127.0.0.1:8001`.
 - nginx serves `frontend/dist` and proxies `/api/` on a dedicated port
-  (`:8081`), separate from tcg-dashboard's `:80`.
+  (`:8081`), separate from tcg-dashboard's `:80`. That server block needs
+  `client_max_body_size 25m;` so phone photos can be uploaded (nginx's
+  default limit is 1 MB).
+- `:8081` is TLS (self-signed cert at `/etc/nginx/ssl/video-game-tracker.*`,
+  10-year validity, IP SAN for `10.10.11.45`) because the UPC scanner's
+  camera access requires a secure context. Browsers warn on first visit;
+  accept the warning once per device. Regenerate with:
+  `openssl req -x509 -newkey rsa:2048 -keyout video-game-tracker.key -out video-game-tracker.crt -days 3650 -nodes -subj "/CN=10.10.11.45" -addext "subjectAltName=IP:10.10.11.45"`
 - `scripts/deploy.sh` runs from cron every 5 minutes, polling `origin/main`
   and restarting/rebuilding only what changed.

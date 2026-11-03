@@ -14,6 +14,9 @@ G_MARKET_PRICE = "field_14845"
 G_NOTES = "field_14846"
 G_CIB_REQUIRES = "field_14864"
 G_UPC = "field_14872"
+G_COVER_URL = "field_14873"  # "Cover URL" (URL)
+G_PRICE_UPDATED = "field_14874"  # "Price updated" (Date, no time) -- set whenever Market price changes
+G_COMPLETIONATOR_URL = "field_14875"  # "Completionator URL" (URL) -- filled by scripts/import_completionator.py
 
 PLATFORM_OPTIONS = {
     "OG Xbox": 3859,
@@ -42,6 +45,7 @@ C_HAS_CASE = "field_14867"
 C_CASE_QUALITY = "field_14868"
 C_HAS_MANUAL = "field_14869"
 C_MANUAL_QUALITY = "field_14870"
+C_PHOTO = "field_14876"  # "Photo" (File)
 
 STATUS_OPTIONS = {"Collection": 3863, "For Sale": 3864, "Sold": 3865}
 STATUS_OPTIONS_BY_ID = {v: k for k, v in STATUS_OPTIONS.items()}
