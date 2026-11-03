@@ -161,6 +161,14 @@ export function GamesPage() {
                   <a className="ext-link" href={priceChartingUrl(g)} target="_blank" rel="noreferrer">
                     PriceCharting ↗
                   </a>
+                  {g.completionator_url && (
+                    <>
+                      {' '}
+                      <a className="ext-link" href={g.completionator_url} target="_blank" rel="noreferrer">
+                        Completionator ↗
+                      </a>
+                    </>
+                  )}
                 </td>
                 <td>{g.platform}</td>
                 <td>

@@ -17,6 +17,7 @@ export interface Game {
   price_updated: string | null
   cib_requires: CibComponent[]
   cover_url: string | null
+  completionator_url: string | null
   notes: string
 }
 

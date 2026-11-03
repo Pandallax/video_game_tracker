@@ -57,6 +57,25 @@ class BaserowClient:
             raise BaserowError(resp.status_code, resp.text)
         return resp.json()["items"]
 
+    async def batch_update_rows(self, table_id: int, rows: list[dict]) -> list[dict]:
+        """Each item must include "id" plus the field values to change (max 200 per call)."""
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.patch(
+                f"{self._base_url}/api/database/rows/table/{table_id}/batch/",
+                headers=self._headers,
+                json={"items": rows},
+            )
+        if resp.status_code != 200:
+            raise BaserowError(resp.status_code, resp.text)
+        return resp.json()["items"]
+
+    async def list_fields(self, table_id: int) -> list[dict]:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(f"{self._base_url}/api/database/fields/table/{table_id}/", headers=self._headers)
+        if resp.status_code != 200:
+            raise BaserowError(resp.status_code, resp.text)
+        return resp.json()
+
     async def upload_file(self, filename: str, content: bytes, content_type: str) -> dict:
         """Upload to Baserow's user-file storage; set a file field to [{"name": result["name"]}]."""
         async with httpx.AsyncClient(timeout=60) as client:

@@ -15,6 +15,7 @@ class GameOut(BaseModel):
     price_updated: str | None
     cib_requires: list[str]
     cover_url: str | None
+    completionator_url: str | None
     notes: str
 
 
@@ -141,6 +142,7 @@ def game_row_to_out(row: dict) -> GameOut:
         price_updated=row.get(f.G_PRICE_UPDATED) if f.G_PRICE_UPDATED else None,
         cib_requires=cib_requires,
         cover_url=(row.get(f.G_COVER_URL) or None) if f.G_COVER_URL else None,
+        completionator_url=(row.get(f.G_COMPLETIONATOR_URL) or None) if f.G_COMPLETIONATOR_URL else None,
         notes=row.get(f.G_NOTES) or "",
     )
 

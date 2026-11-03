@@ -17,6 +17,7 @@ G_CIB_REQUIRES = "field_14864"
 # scripts/discover_baserow.py to get their ids, and paste them here.
 G_COVER_URL: str | None = None  # "Cover URL" (URL)
 G_PRICE_UPDATED: str | None = None  # "Price updated" (Date, no time) -- set whenever Market price changes
+G_COMPLETIONATOR_URL: str | None = None  # "Completionator URL" (URL) -- filled by scripts/import_completionator.py
 
 PLATFORM_OPTIONS = {
     "OG Xbox": 3859,
