@@ -45,6 +45,8 @@ C_HAS_CASE = "field_14867"
 C_CASE_QUALITY = "field_14868"
 C_HAS_MANUAL = "field_14869"
 C_MANUAL_QUALITY = "field_14870"
+# "Photo" (File). None until created in Baserow; see the optional-fields note above.
+C_PHOTO: str | None = None
 
 STATUS_OPTIONS = {"Collection": 3863, "For Sale": 3864, "Sold": 3865}
 STATUS_OPTIONS_BY_ID = {v: k for k, v in STATUS_OPTIONS.items()}

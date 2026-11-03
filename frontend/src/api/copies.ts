@@ -23,6 +23,8 @@ export interface Copy {
   purchased_from: string
   location: string
   notes: string
+  /** Your own photo of this copy (WebP), if uploaded. */
+  photo_url: string | null
 }
 
 export interface CopyCreate {
@@ -72,3 +74,12 @@ export const createCopy = (body: CopyCreate) => api.post<Copy>('/copies', body)
 export const updateCopy = (id: number, body: CopyUpdate) => api.patch<Copy>(`/copies/${id}`, body)
 
 export const deleteCopy = (id: number) => api.delete<void>(`/copies/${id}`)
+
+/** Uploads a photo of the copy; the server converts it to WebP. */
+export const uploadCopyPhoto = (id: number, file: File) => {
+  const form = new FormData()
+  form.append('file', file)
+  return api.putForm<Copy>(`/copies/${id}/photo`, form)
+}
+
+export const deleteCopyPhoto = (id: number) => api.delete<Copy>(`/copies/${id}/photo`)

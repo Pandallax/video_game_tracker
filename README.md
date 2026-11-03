@@ -44,7 +44,7 @@ cd backend
   specific printing is the one being chased.
 - **Copies** (table 1375): Copy ID, Game (link), Status (Collection / For Sale
   / Sold), Condition, Purchase price, Purchase date, Purchased from, Location,
-  Notes. First copy of a title goes to Collection; duplicates go For Sale.
+  Notes, Photo (file). First copy of a title goes to Collection; duplicates go For Sale.
 - **Sales** (table 1376): Sale ID, Copy (link), Sold on, Sale date, Sale
   price, Fees, Shipping cost, Net (formula).
 
@@ -56,6 +56,11 @@ Twitch/IGDB credential setup). Click a thumbnail on the Games page to paste a
 different image URL. Each game also links to a PriceCharting search for that
 title and console.
 
+Copies can have their own photo (Copies page: click the thumbnail). Uploads
+are resized to at most 1600px and re-encoded as WebP at 85% quality
+(`backend/app/photos.py`) before being stored in Baserow; that photo is shown
+in place of the game's cover art wherever the copy appears.
+
 See `scripts/discover_baserow.py` to re-dump the current field/table IDs if
 the schema changes (`backend/app/baserow/field_ids.py` is hand-synced from it).
 
@@ -64,6 +69,8 @@ the schema changes (`backend/app/baserow/field_ids.py` is hand-synced from it).
 - systemd unit `video-game-tracker-backend.service` runs uvicorn on
   `127.0.0.1:8001`.
 - nginx serves `frontend/dist` and proxies `/api/` on a dedicated port
-  (`:8081`), separate from tcg-dashboard's `:80`.
+  (`:8081`), separate from tcg-dashboard's `:80`. That server block needs
+  `client_max_body_size 25m;` so phone photos can be uploaded (nginx's
+  default limit is 1 MB).
 - `scripts/deploy.sh` runs from cron every 5 minutes, polling `origin/main`
   and restarting/rebuilding only what changed.

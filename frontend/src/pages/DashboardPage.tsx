@@ -56,7 +56,7 @@ export function DashboardPage() {
             const title = c.game_title ?? game?.title ?? c.copy_id
             return (
               <div key={c.id} className="cover-tile">
-                <Cover url={game?.cover_url} title={title} />
+                <Cover url={c.photo_url ?? game?.cover_url} title={title} />
                 <span className="cover-tile-title" title={title}>
                   {title}
                 </span>

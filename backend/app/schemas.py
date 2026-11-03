@@ -61,6 +61,7 @@ class CopyOut(BaseModel):
     purchased_from: str
     location: str
     notes: str
+    photo_url: str | None
 
 
 class CopyCreate(BaseModel):
@@ -212,7 +213,12 @@ def copy_row_to_out(row: dict, game_cib_requires: list[str] | None = None) -> Co
         purchased_from=row.get(f.C_PURCHASED_FROM) or "",
         location=row.get(f.C_LOCATION) or "",
         notes=row.get(f.C_NOTES) or "",
+        photo_url=_first_file_url(row.get(f.C_PHOTO)) if f.C_PHOTO else None,
     )
+
+
+def _first_file_url(files: list[dict] | None) -> str | None:
+    return files[0].get("url") if files else None
 
 
 def sale_row_to_out(row: dict) -> SaleOut:

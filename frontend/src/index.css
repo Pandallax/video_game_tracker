@@ -302,3 +302,31 @@ button {
   color: #aab2c0;
   font-size: 0.85rem;
 }
+
+.photo-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.photo-upload {
+  cursor: pointer;
+  display: block;
+}
+
+.photo-upload.uploading {
+  opacity: 0.4;
+  cursor: progress;
+}
+
+.link-button {
+  background: none;
+  color: #aab2c0;
+  padding: 0 0.25rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.link-button:hover {
+  color: #ff6b6b;
+}

@@ -69,6 +69,18 @@ class BaserowClient:
             raise BaserowError(resp.status_code, resp.text)
         return resp.json()["items"]
 
+    async def upload_file(self, filename: str, content: bytes, content_type: str) -> dict:
+        """Upload to Baserow's user-file storage; set a file field to [{"name": result["name"]}]."""
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(
+                f"{self._base_url}/api/user-files/upload-file/",
+                headers=self._headers,
+                files={"file": (filename, content, content_type)},
+            )
+        if resp.status_code != 200:
+            raise BaserowError(resp.status_code, resp.text)
+        return resp.json()
+
     async def get_row(self, table_id: int, row_id: int) -> dict | None:
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.get(

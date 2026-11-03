@@ -1,13 +1,25 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { listGames, type Game } from '../api/games'
 import { Cover } from '../components/Cover'
-import { createCopy, deleteCopy, listCopies, updateCopy, STATUSES, type Copy, type CopyStatus } from '../api/copies'
+import {
+  createCopy,
+  deleteCopy,
+  deleteCopyPhoto,
+  listCopies,
+  updateCopy,
+  uploadCopyPhoto,
+  STATUSES,
+  type Copy,
+  type CopyStatus,
+} from '../api/copies'
 
 export function CopiesPage() {
   const [copies, setCopies] = useState<Copy[]>([])
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('')
+  const [uploadingId, setUploadingId] = useState<number | null>(null)
+  const [photoError, setPhotoError] = useState('')
 
   const [copyId, setCopyId] = useState('')
   const [gameId, setGameId] = useState<number | ''>('')
@@ -64,6 +76,26 @@ export function CopiesPage() {
 
   const handleStatusChange = async (copy: Copy, status: CopyStatus) => {
     await updateCopy(copy.id, { status })
+    refresh()
+  }
+
+  const handlePhotoUpload = async (copy: Copy, file: File | undefined) => {
+    if (!file) return
+    setPhotoError('')
+    setUploadingId(copy.id)
+    try {
+      await uploadCopyPhoto(copy.id, file)
+      await refresh()
+    } catch (err) {
+      setPhotoError(`${copy.copy_id}: ${err instanceof Error ? err.message : 'upload failed'}`)
+    } finally {
+      setUploadingId(null)
+    }
+  }
+
+  const handlePhotoRemove = async (copy: Copy) => {
+    if (!window.confirm(`Remove the photo for ${copy.copy_id}?`)) return
+    await deleteCopyPhoto(copy.id)
     refresh()
   }
 
@@ -167,6 +199,8 @@ export function CopiesPage() {
         </select>
       </div>
 
+      {photoError && <p className="error">{photoError}</p>}
+
       {loading ? (
         <p>Loading...</p>
       ) : (
@@ -188,11 +222,33 @@ export function CopiesPage() {
             {copies.map((c) => (
               <tr key={c.id}>
                 <td>
-                  <Cover
-                    url={c.game_id != null ? coverByGameId.get(c.game_id) : null}
-                    title={c.game_title ?? ''}
-                    size="thumb"
-                  />
+                  <div className="photo-cell">
+                    <label
+                      className={`photo-upload${uploadingId === c.id ? ' uploading' : ''}`}
+                      title={c.photo_url ? 'Replace photo' : 'Upload a photo of this copy'}
+                    >
+                      <Cover
+                        url={c.photo_url ?? (c.game_id != null ? coverByGameId.get(c.game_id) : null)}
+                        title={c.game_title ?? ''}
+                        size="thumb"
+                      />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        disabled={uploadingId !== null}
+                        onChange={(e) => {
+                          handlePhotoUpload(c, e.target.files?.[0])
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                    {c.photo_url && (
+                      <button className="link-button" onClick={() => handlePhotoRemove(c)} title="Remove photo">
+                        ×
+                      </button>
+                    )}
+                  </div>
                 </td>
                 <td>{c.copy_id}</td>
                 <td>{c.game_title}</td>
