@@ -50,12 +50,21 @@ class GamePrices(BaseModel):
     manual_only: float | None = None
 
 
+class EditionOptions(BaseModel):
+    configured: bool  # an "Editions" field exists on Games
+    # Choices for a select field; empty with free_text for a text field.
+    options: list[str]
+    free_text: bool
+
+
 class GameOut(BaseModel):
     id: int
     title: str
     platform: str | None
     target: bool
     upgrade_to_id: int | None
+    # "" for the normal release, otherwise e.g. "Platinum Hits".
+    edition: str
     prices: GamePrices
     # Which price kinds have a Baserow field; writes to the others are rejected.
     price_kinds: list[str]
@@ -72,6 +81,7 @@ class GameCreate(BaseModel):
     platform: str
     target: bool = True
     upgrade_to_id: int | None = None
+    edition: str = ""
     prices: GamePrices | None = None
     cib_requires: list[str] = list(CIB_COMPONENTS)
     upc: str = ""
@@ -84,6 +94,8 @@ class GameUpdate(BaseModel):
     platform: str | None = None
     target: bool | None = None
     upgrade_to_id: int | None = None
+    # Empty string clears it (back to the normal release).
+    edition: str | None = None
     prices: GamePrices | None = None
     cib_requires: list[str] | None = None
     upc: str | None = None
@@ -190,7 +202,16 @@ def _number(row: dict, field: str | None) -> float | None:
     return _as_price(row.get(field)) if field else None
 
 
-def game_row_to_out(row: dict) -> GameOut:
+def edition_from_value(value) -> str:
+    """Edition name from a Baserow single/multiple select or text value."""
+    if isinstance(value, dict):
+        return value.get("value") or ""
+    if isinstance(value, list):
+        return ", ".join(v.get("value", "") if isinstance(v, dict) else str(v) for v in value)
+    return (value or "").strip() if isinstance(value, str) else ""
+
+
+def game_row_to_out(row: dict, edition_key: str | None = None) -> GameOut:
     platform = row.get(f.G_PLATFORM)
     upgrade = row.get(f.G_UPGRADE_TO) or []
     cib_requires = [opt["value"] for opt in (row.get(f.G_CIB_REQUIRES) or [])]
@@ -200,6 +221,7 @@ def game_row_to_out(row: dict) -> GameOut:
         platform=platform["value"] if platform else None,
         target=bool(row.get(f.G_TARGET)),
         upgrade_to_id=upgrade[0]["id"] if upgrade else None,
+        edition=edition_from_value(row.get(edition_key)) if edition_key else "",
         prices=GamePrices(**{kind: _number(row, field) for kind, field in price_fields().items()}),
         price_kinds=[kind for kind, field in price_fields().items() if field],
         price_updated=row.get(f.G_PRICE_UPDATED) if f.G_PRICE_UPDATED else None,

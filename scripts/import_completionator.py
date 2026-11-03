@@ -22,6 +22,9 @@ the current directory and changes nothing. Add flags to write:
                        three by default, or name the ones you want.
                        Only fills empty prices unless --overwrite-prices
     --set-links        fill "Completionator URL" (if that field exists)
+    --set-editions     fill the Games "Editions" field from the checklist's
+                       Edition column, for games where it's blank (editions
+                       that aren't an option on that field are reported)
 
 Titles that look close but aren't exact (e.g. punctuation differences) are
 reported as possible_match and are never auto-added, so they don't become
@@ -29,7 +32,7 @@ duplicates. Rename them in Baserow to match, then re-run.
 
 Usage (run on the VM, where .env has the real Baserow token):
     cd backend && ./.venv/bin/python ../scripts/import_completionator.py ~/checklist/*.htm \\
-        [--platform "OG Xbox"] [--add-missing] [--set-prices] [--set-links]
+        [--platform "OG Xbox"] [--add-missing] [--set-prices] [--set-links] [--set-editions]
 """
 import argparse
 import asyncio
@@ -48,6 +51,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "backend"))
 
 from app.baserow import field_ids as f  # noqa: E402
+from app.baserow.game_fields import edition_write_value, find_edition_field  # noqa: E402
+from app.schemas import edition_from_value  # noqa: E402
 
 REPORT_PATH = "completionator_report.csv"
 POSSIBLE_MATCH_THRESHOLD = 0.85
@@ -210,6 +215,7 @@ async def main() -> int:
                         help="loose / complete / new (default: all three)")
     parser.add_argument("--overwrite-prices", action="store_true")
     parser.add_argument("--set-links", action="store_true")
+    parser.add_argument("--set-editions", action="store_true")
     args = parser.parse_args()
 
     entries: list[Entry] = []
@@ -243,6 +249,8 @@ async def main() -> int:
     print(f"  only in Baserow:    {len(comparison.only_in_baserow)}  (expected until every page is saved)")
     print(f"  -> {REPORT_PATH}")
 
+    edition_fld = find_edition_field(await baserow_client.list_fields(f.TABLE_GAMES))
+
     if args.add_missing and comparison.missing:
         # Base releases first so editions can link to them via Upgrade to.
         base_ids = {normalize(t): rid for rid, t in games}
@@ -265,6 +273,11 @@ async def main() -> int:
                 item = {f.G_TITLE: e.baserow_title, f.G_PLATFORM: f.PLATFORM_OPTIONS[args.platform], f.G_TARGET: False}
                 if base_id := base_ids.get(normalize(e.title)):
                     item[f.G_UPGRADE_TO] = [base_id]
+                if edition_fld:
+                    try:
+                        item[edition_fld.key] = edition_write_value(edition_fld, e.edition)
+                    except ValueError:
+                        pass  # not an option on the Editions field; --set-editions reports these
                 items.append(item)
             created = await baserow_client.batch_create_rows(f.TABLE_GAMES, items)
             for e, row in zip(chunk, created):
@@ -296,6 +309,20 @@ async def main() -> int:
                 values[field] = price
                 if price_updated:
                     values[price_updated] = today
+    if args.set_editions:
+        if edition_fld is None:
+            print('No "Editions" field on Games -- skipping editions')
+        else:
+            unknown: dict[str, int] = {}
+            for e, row_id in comparison.matched:
+                if not e.edition or edition_from_value(row_by_id[row_id].get(edition_fld.key)):
+                    continue
+                try:
+                    updates.setdefault(row_id, {})[edition_fld.key] = edition_write_value(edition_fld, e.edition)
+                except ValueError:
+                    unknown[e.edition] = unknown.get(e.edition, 0) + 1
+            for name, count in sorted(unknown.items()):
+                print(f'  Edition "{name}" ({count} games) is not an option on Editions -- add it in Baserow and re-run')
     if args.set_links:
         link_field = await optional_field(baserow_client, "Completionator URL")
         if link_field is None:
@@ -309,7 +336,7 @@ async def main() -> int:
         items = [{"id": row_id, **values} for row_id, values in updates.items()]
         for i in range(0, len(items), BATCH_SIZE):
             await baserow_client.batch_update_rows(f.TABLE_GAMES, items[i : i + BATCH_SIZE])
-        print(f"Updated prices/links on {len(items)} games")
+        print(f"Updated prices/links/editions on {len(items)} games")
 
     return 0
 

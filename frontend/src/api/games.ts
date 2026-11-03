@@ -32,6 +32,8 @@ export interface Game {
   platform: Platform | null
   target: boolean
   upgrade_to_id: number | null
+  /** '' for the normal release, otherwise e.g. 'Platinum Hits'. */
+  edition: string
   prices: GamePrices
   /** Price kinds that have a Baserow field; the others can't be saved yet. */
   price_kinds: PriceKind[]
@@ -49,6 +51,7 @@ export interface GameCreate {
   platform: Platform
   target?: boolean
   upgrade_to_id?: number | null
+  edition?: string
   prices?: Partial<GamePrices>
   cib_requires?: CibComponent[]
   upc?: string
@@ -60,6 +63,8 @@ export interface GameUpdate {
   platform?: Platform
   target?: boolean
   upgrade_to_id?: number | null
+  /** Empty string clears it (back to the normal release). */
+  edition?: string
   /** Only the kinds included are changed; null clears one. */
   prices?: Partial<GamePrices>
   cib_requires?: CibComponent[]
@@ -72,7 +77,23 @@ export interface GameUpdate {
 export const listGames = (platform?: string) =>
   api.get<Game[]>(`/games${platform ? `?platform=${encodeURIComponent(platform)}` : ''}`)
 
-export const createGame = (body: GameCreate) => api.post<Game>('/games', body)
+export interface EditionOptions {
+  /** Whether the Games table has an "Editions" field. */
+  configured: boolean
+  options: string[]
+  /** A text field rather than a select: any value is allowed. */
+  free_text: boolean
+}
+
+export const listEditions = () => api.get<EditionOptions>('/games/editions')
+
+/** CSS modifier for an edition: Platinum Hits gets its own look, other editions a generic one. */
+export const editionClass = (edition: string) => {
+  if (!edition) return ''
+  return /platinum/i.test(edition) ? 'edition-platinum' : 'edition-other'
+}
+
+export const createGame =(body: GameCreate) => api.post<Game>('/games', body)
 
 export const updateGame = (id: number, body: GameUpdate) => api.patch<Game>(`/games/${id}`, body)
 
