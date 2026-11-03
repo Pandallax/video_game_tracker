@@ -33,11 +33,11 @@ def test_game_row_reads_optional_fields(monkeypatch):
     row = {
         "id": 1,
         f.G_TITLE: "Halo",
-        "field_cover": "https://images.igdb.com/x.jpg",
+        "field_cover": "https://example.com/halo.jpg",
         "field_price_updated": "2026-11-03",
     }
     game = game_row_to_out(row)
-    assert game.cover_url == "https://images.igdb.com/x.jpg"
+    assert game.cover_url == "https://example.com/halo.jpg"
     assert game.price_updated == "2026-11-03"
 
 

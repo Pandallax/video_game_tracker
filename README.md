@@ -50,10 +50,8 @@ cd backend
 
 Completion stats only count `Collection` copies of `Target`-flagged games.
 
-Cover art comes from IGDB: `scripts/fetch_igdb_covers.py` matches each game
-by title + platform and fills Cover URL (see the script's docstring for the
-Twitch/IGDB credential setup). Click a thumbnail on the Games page to paste a
-different image URL. Each game also links to a PriceCharting search for that
+Cover URL is filled in by hand: click a game's thumbnail on the Games page
+and paste an image link (or edit the field in Baserow). Each game also links to a PriceCharting search for that
 title and console.
 
 Copies can have their own photo (Copies page: click the thumbnail). Uploads
