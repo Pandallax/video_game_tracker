@@ -69,6 +69,15 @@ The Dashboard has a "Scan UPC" button that opens the phone camera
 adding a copy. Camera access needs a secure context, which is why the VM
 serves `:8081` over TLS (see Deploy below).
 
+Games has an "Editions" field (single select, found by name, so options can
+be added in Baserow at any time): blank is the normal release, otherwise e.g.
+"Platinum Hits". Platinum Hits games get a silver/platinum card and badge;
+other editions get a purple one.
+
+The Games page has a Table / Cards toggle (remembered per browser). Cards show
+large cover art, title, platform, edition, the CIB price up front and the
+other prices underneath.
+
 Games page rows are read-only; click Edit on a row to change its title,
 platform, target, prices, UPC, CIB requirements or cover image URL, then Save
 (or Cancel). Saving sends only what changed, and Price updated is set to
@@ -80,7 +89,8 @@ title and console.
 
 `scripts/import_completionator.py` compares saved pages of a Completionator
 checklist (no export exists, so save each page from the browser) against the
-Games table, and can add missing games/editions, fill the Loose / CIB /
+Games table, and can add missing games/editions (setting Editions),
+fill Editions on existing games (--set-editions), fill the Loose / CIB /
 Sealed prices from the checklist's loose/complete/new columns, and store each game's Completionator
 link. It only writes a report unless given flags; see its docstring.
 
