@@ -39,6 +39,20 @@ def test_only_sent_price_kinds_are_written(monkeypatch):
     assert values == {"field_loose": 4.0, "field_sealed": None}
 
 
+def test_unchanged_price_does_not_stamp(monkeypatch):
+    monkeypatch.setattr(f, "G_PRICE_UPDATED", "field_price_updated")
+    values: dict = {}
+    games._set_prices(values, GamePrices(cib=12.5), {"id": 1, f.G_CIB_PRICE: "12.50"})
+    assert values == {f.G_CIB_PRICE: 12.5}
+
+
+def test_changed_price_stamps_against_current_row(monkeypatch):
+    monkeypatch.setattr(f, "G_PRICE_UPDATED", "field_price_updated")
+    values: dict = {}
+    games._set_prices(values, GamePrices(cib=None), {"id": 1, f.G_CIB_PRICE: "12.50"})
+    assert values == {f.G_CIB_PRICE: None, "field_price_updated": date.today().isoformat()}
+
+
 def test_no_prices_sent_changes_nothing(monkeypatch):
     monkeypatch.setattr(f, "G_PRICE_UPDATED", "field_price_updated")
     values: dict = {}

@@ -366,3 +366,70 @@ button {
 .link-button:hover {
   color: #ff6b6b;
 }
+
+.row-actions {
+  white-space: nowrap;
+}
+
+.row-actions button + button {
+  margin-left: 0.4rem;
+}
+
+.secondary-button {
+  background: #2a2f3a;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.editing-row td {
+  background: #171a21;
+  vertical-align: top;
+}
+
+.edit-input {
+  display: block;
+  width: 100%;
+  min-width: 12rem;
+  box-sizing: border-box;
+  background: #0f1115;
+  border: 1px solid #333;
+  color: #e6e8eb;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+}
+
+.edit-input + .edit-input {
+  margin-top: 0.35rem;
+}
+
+.editing-row .price-input {
+  width: 4.5rem;
+}
+
+.editing-row .upc-cell {
+  width: 6rem;
+}
+
+.editing-row .edit-input {
+  min-width: 10rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.editing-row td {
+  padding: 0.5rem 0.3rem;
+}
+
+.editing-row .row-actions button {
+  display: block;
+  width: 100%;
+}
+
+.editing-row .row-actions button + button {
+  margin: 0.35rem 0 0;
+}

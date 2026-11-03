@@ -287,8 +287,11 @@ async def main() -> int:
         for e, row_id in comparison.matched:
             for column, field in targets.items():
                 price = getattr(e, column)
-                if price is None or (row_by_id[row_id].get(field) and not args.overwrite_prices):
+                current = row_by_id[row_id].get(field)
+                if price is None or (current and not args.overwrite_prices):
                     continue
+                if current not in (None, "") and float(current) == price:
+                    continue  # unchanged -- don't bump Price updated
                 values = updates.setdefault(row_id, {})
                 values[field] = price
                 if price_updated:
