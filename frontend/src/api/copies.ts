@@ -3,16 +3,21 @@ import { api } from './client'
 export const STATUSES = ['Collection', 'For Sale', 'Sold'] as const
 export type CopyStatus = (typeof STATUSES)[number]
 
-export const CONDITIONS = ['Sealed', 'Complete In Box', 'Disc/Cart Only', 'Case/Manual Only'] as const
-export type Condition = (typeof CONDITIONS)[number]
-
 export interface Copy {
   id: number
   copy_id: string
   game_id: number | null
   game_title: string | null
   status: CopyStatus | null
-  condition: Condition | null
+  sealed: boolean
+  has_disc: boolean
+  disc_quality: number | null
+  has_case: boolean
+  case_quality: number | null
+  has_manual: boolean
+  manual_quality: number | null
+  overall_quality: number | null
+  completeness: string
   purchase_price: number | null
   purchase_date: string | null
   purchased_from: string
@@ -24,7 +29,13 @@ export interface CopyCreate {
   copy_id: string
   game_id: number
   status?: CopyStatus
-  condition?: Condition | null
+  sealed?: boolean
+  has_disc?: boolean
+  disc_quality?: number | null
+  has_case?: boolean
+  case_quality?: number | null
+  has_manual?: boolean
+  manual_quality?: number | null
   purchase_price?: number | null
   purchase_date?: string | null
   purchased_from?: string
@@ -34,7 +45,13 @@ export interface CopyCreate {
 
 export interface CopyUpdate {
   status?: CopyStatus
-  condition?: Condition | null
+  sealed?: boolean
+  has_disc?: boolean
+  disc_quality?: number | null
+  has_case?: boolean
+  case_quality?: number | null
+  has_manual?: boolean
+  manual_quality?: number | null
   purchase_price?: number | null
   purchase_date?: string | null
   purchased_from?: string

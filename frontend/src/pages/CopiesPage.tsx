@@ -1,16 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { listGames, type Game } from '../api/games'
-import {
-  createCopy,
-  deleteCopy,
-  listCopies,
-  updateCopy,
-  CONDITIONS,
-  STATUSES,
-  type Copy,
-  type CopyStatus,
-  type Condition,
-} from '../api/copies'
+import { createCopy, deleteCopy, listCopies, updateCopy, STATUSES, type Copy, type CopyStatus } from '../api/copies'
 
 export function CopiesPage() {
   const [copies, setCopies] = useState<Copy[]>([])
@@ -20,7 +10,13 @@ export function CopiesPage() {
 
   const [copyId, setCopyId] = useState('')
   const [gameId, setGameId] = useState<number | ''>('')
-  const [condition, setCondition] = useState<Condition>('Complete In Box')
+  const [sealed, setSealed] = useState(false)
+  const [hasDisc, setHasDisc] = useState(true)
+  const [discQuality, setDiscQuality] = useState('8')
+  const [hasCase, setHasCase] = useState(true)
+  const [caseQuality, setCaseQuality] = useState('8')
+  const [hasManual, setHasManual] = useState(true)
+  const [manualQuality, setManualQuality] = useState('8')
   const [purchasePrice, setPurchasePrice] = useState('')
   const [purchasedFrom, setPurchasedFrom] = useState('')
   const [location, setLocation] = useState('')
@@ -43,13 +39,20 @@ export function CopiesPage() {
     await createCopy({
       copy_id: copyId.trim(),
       game_id: gameId,
-      condition,
+      sealed,
+      has_disc: !sealed && hasDisc,
+      disc_quality: !sealed && hasDisc && discQuality ? Number(discQuality) : null,
+      has_case: !sealed && hasCase,
+      case_quality: !sealed && hasCase && caseQuality ? Number(caseQuality) : null,
+      has_manual: !sealed && hasManual,
+      manual_quality: !sealed && hasManual && manualQuality ? Number(manualQuality) : null,
       purchase_price: purchasePrice ? Number(purchasePrice) : null,
       purchased_from: purchasedFrom,
       location,
     })
     setCopyId('')
     setGameId('')
+    setSealed(false)
     setPurchasePrice('')
     setPurchasedFrom('')
     setLocation('')
@@ -70,7 +73,7 @@ export function CopiesPage() {
     <div>
       <h2>Owned Copies</h2>
 
-      <form className="inline-form" onSubmit={handleAdd}>
+      <form className="inline-form copy-form" onSubmit={handleAdd}>
         <input placeholder="Copy ID" value={copyId} onChange={(e) => setCopyId(e.target.value)} />
         <select value={gameId} onChange={(e) => setGameId(e.target.value ? Number(e.target.value) : '')}>
           <option value="">Select game...</option>
@@ -80,13 +83,64 @@ export function CopiesPage() {
             </option>
           ))}
         </select>
-        <select value={condition} onChange={(e) => setCondition(e.target.value as Condition)}>
-          {CONDITIONS.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+
+        <label className="checkbox-label">
+          <input type="checkbox" checked={sealed} onChange={(e) => setSealed(e.target.checked)} />
+          Sealed
+        </label>
+
+        {!sealed && (
+          <div className="component-grid">
+            <label className="checkbox-label">
+              <input type="checkbox" checked={hasDisc} onChange={(e) => setHasDisc(e.target.checked)} />
+              Disc
+            </label>
+            {hasDisc && (
+              <input
+                className="quality-input"
+                type="number"
+                min={1}
+                max={10}
+                value={discQuality}
+                onChange={(e) => setDiscQuality(e.target.value)}
+                title="Disc quality (1-10)"
+              />
+            )}
+
+            <label className="checkbox-label">
+              <input type="checkbox" checked={hasCase} onChange={(e) => setHasCase(e.target.checked)} />
+              Case
+            </label>
+            {hasCase && (
+              <input
+                className="quality-input"
+                type="number"
+                min={1}
+                max={10}
+                value={caseQuality}
+                onChange={(e) => setCaseQuality(e.target.value)}
+                title="Case quality (1-10)"
+              />
+            )}
+
+            <label className="checkbox-label">
+              <input type="checkbox" checked={hasManual} onChange={(e) => setHasManual(e.target.checked)} />
+              Manual
+            </label>
+            {hasManual && (
+              <input
+                className="quality-input"
+                type="number"
+                min={1}
+                max={10}
+                value={manualQuality}
+                onChange={(e) => setManualQuality(e.target.value)}
+                title="Manual quality (1-10)"
+              />
+            )}
+          </div>
+        )}
+
         <input
           placeholder="Purchase price"
           type="number"
@@ -119,7 +173,8 @@ export function CopiesPage() {
               <th>Copy ID</th>
               <th>Game</th>
               <th>Status</th>
-              <th>Condition</th>
+              <th>Completeness</th>
+              <th>Quality</th>
               <th>Purchase price</th>
               <th>Location</th>
               <th></th>
@@ -139,7 +194,8 @@ export function CopiesPage() {
                     ))}
                   </select>
                 </td>
-                <td>{c.condition}</td>
+                <td>{c.completeness}</td>
+                <td>{c.overall_quality != null ? `${c.overall_quality}/10` : '—'}</td>
                 <td>{c.purchase_price != null ? `$${c.purchase_price.toFixed(2)}` : '—'}</td>
                 <td>{c.location}</td>
                 <td>

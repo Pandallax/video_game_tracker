@@ -112,6 +112,37 @@ button {
   font-size: 0.85rem;
 }
 
+.cib-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #aab2c0;
+}
+
+.component-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  background: #171a21;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+.quality-input {
+  width: 3.5rem;
+  background: #0f1115;
+  border: 1px solid #333;
+  color: #e6e8eb;
+  padding: 0.4rem;
+  border-radius: 6px;
+}
+
+.copy-form {
+  align-items: flex-start;
+}
+
 .inline-form {
   display: flex;
   flex-wrap: wrap;

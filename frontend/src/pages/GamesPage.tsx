@@ -1,5 +1,15 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { createGame, deleteGame, listGames, updateGame, PLATFORMS, type Game, type Platform } from '../api/games'
+import {
+  createGame,
+  deleteGame,
+  listGames,
+  updateGame,
+  PLATFORMS,
+  CIB_COMPONENTS,
+  type Game,
+  type Platform,
+  type CibComponent,
+} from '../api/games'
 
 export function GamesPage() {
   const [games, setGames] = useState<Game[]>([])
@@ -9,7 +19,8 @@ export function GamesPage() {
   const [title, setTitle] = useState('')
   const [platform, setPlatform] = useState<Platform>('OG Xbox')
   const [target, setTarget] = useState(true)
-  const [targetPrice, setTargetPrice] = useState('')
+  const [marketPrice, setMarketPrice] = useState('')
+  const [cibRequires, setCibRequires] = useState<CibComponent[]>([...CIB_COMPONENTS])
 
   const refresh = () => listGames(platformFilter || undefined).then(setGames)
 
@@ -26,16 +37,30 @@ export function GamesPage() {
       title: title.trim(),
       platform,
       target,
-      target_price: targetPrice ? Number(targetPrice) : null,
+      market_price: marketPrice ? Number(marketPrice) : null,
+      cib_requires: cibRequires,
     })
     setTitle('')
-    setTargetPrice('')
+    setMarketPrice('')
+    setCibRequires([...CIB_COMPONENTS])
     refresh()
   }
 
   const toggleTarget = async (game: Game) => {
     await updateGame(game.id, { target: !game.target })
     refresh()
+  }
+
+  const toggleCibComponent = async (game: Game, component: CibComponent) => {
+    const next = game.cib_requires.includes(component)
+      ? game.cib_requires.filter((c) => c !== component)
+      : [...game.cib_requires, component]
+    await updateGame(game.id, { cib_requires: next })
+    refresh()
+  }
+
+  const toggleNewCibComponent = (component: CibComponent) => {
+    setCibRequires((prev) => (prev.includes(component) ? prev.filter((c) => c !== component) : [...prev, component]))
   }
 
   const handleDelete = async (id: number) => {
@@ -61,12 +86,21 @@ export function GamesPage() {
           Target
         </label>
         <input
-          placeholder="Target price"
+          placeholder="Market price"
           type="number"
           step="0.01"
-          value={targetPrice}
-          onChange={(e) => setTargetPrice(e.target.value)}
+          value={marketPrice}
+          onChange={(e) => setMarketPrice(e.target.value)}
         />
+        <span className="cib-picker">
+          CIB requires:
+          {CIB_COMPONENTS.map((c) => (
+            <label key={c} className="checkbox-label">
+              <input type="checkbox" checked={cibRequires.includes(c)} onChange={() => toggleNewCibComponent(c)} />
+              {c}
+            </label>
+          ))}
+        </span>
         <button type="submit">Add Game</button>
       </form>
 
@@ -90,7 +124,8 @@ export function GamesPage() {
               <th>Title</th>
               <th>Platform</th>
               <th>Target</th>
-              <th>Target price</th>
+              <th>Market price</th>
+              <th>CIB requires</th>
               <th></th>
             </tr>
           </thead>
@@ -102,7 +137,21 @@ export function GamesPage() {
                 <td>
                   <input type="checkbox" checked={g.target} onChange={() => toggleTarget(g)} />
                 </td>
-                <td>{g.target_price != null ? `$${g.target_price.toFixed(2)}` : '—'}</td>
+                <td>{g.market_price != null ? `$${g.market_price.toFixed(2)}` : '—'}</td>
+                <td>
+                  <span className="cib-picker">
+                    {CIB_COMPONENTS.map((c) => (
+                      <label key={c} className="checkbox-label" title={c}>
+                        <input
+                          type="checkbox"
+                          checked={g.cib_requires.includes(c)}
+                          onChange={() => toggleCibComponent(g, c)}
+                        />
+                        {c[0]}
+                      </label>
+                    ))}
+                  </span>
+                </td>
                 <td>
                   <button onClick={() => handleDelete(g.id)}>Delete</button>
                 </td>

@@ -8,6 +8,13 @@ from app.schemas import GameCreate, GameOut, GameUpdate, game_row_to_out
 router = APIRouter(prefix="/api/games", tags=["games"], dependencies=[Depends(require_auth)])
 
 
+def _cib_option_ids(components: list[str]) -> list[int]:
+    unknown = [c for c in components if c not in f.CIB_COMPONENT_OPTIONS]
+    if unknown:
+        raise HTTPException(status_code=400, detail=f"Unknown CIB component(s): {unknown}")
+    return [f.CIB_COMPONENT_OPTIONS[c] for c in components]
+
+
 @router.get("", response_model=list[GameOut])
 async def list_games(platform: str | None = None):
     rows = await baserow_client.list_rows(f.TABLE_GAMES)
@@ -26,7 +33,8 @@ async def create_game(body: GameCreate):
         f.G_TITLE: body.title,
         f.G_PLATFORM: f.PLATFORM_OPTIONS[body.platform],
         f.G_TARGET: body.target,
-        f.G_TARGET_PRICE: body.target_price,
+        f.G_MARKET_PRICE: body.market_price,
+        f.G_CIB_REQUIRES: _cib_option_ids(body.cib_requires),
         f.G_NOTES: body.notes,
     }
     if body.upgrade_to_id is not None:
@@ -49,8 +57,10 @@ async def update_game(game_id: int, body: GameUpdate):
         values[f.G_TARGET] = body.target
     if body.upgrade_to_id is not None:
         values[f.G_UPGRADE_TO] = [body.upgrade_to_id] if body.upgrade_to_id else []
-    if body.target_price is not None:
-        values[f.G_TARGET_PRICE] = body.target_price
+    if body.market_price is not None:
+        values[f.G_MARKET_PRICE] = body.market_price
+    if body.cib_requires is not None:
+        values[f.G_CIB_REQUIRES] = _cib_option_ids(body.cib_requires)
     if body.notes is not None:
         values[f.G_NOTES] = body.notes
 

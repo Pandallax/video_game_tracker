@@ -10,8 +10,9 @@ G_TITLE = "field_14833"
 G_PLATFORM = "field_14842"
 G_TARGET = "field_14843"
 G_UPGRADE_TO = "field_14844"
-G_TARGET_PRICE = "field_14845"
+G_MARKET_PRICE = "field_14845"
 G_NOTES = "field_14846"
+G_CIB_REQUIRES = "field_14864"
 
 PLATFORM_OPTIONS = {
     "OG Xbox": 3859,
@@ -21,27 +22,28 @@ PLATFORM_OPTIONS = {
 }
 PLATFORM_OPTIONS_BY_ID = {v: k for k, v in PLATFORM_OPTIONS.items()}
 
+CIB_COMPONENT_OPTIONS = {"Disc": 3875, "Case": 3876, "Manual": 3877}
+CIB_COMPONENT_OPTIONS_BY_ID = {v: k for k, v in CIB_COMPONENT_OPTIONS.items()}
+
 # Copies (1375)
 C_COPY_ID = "field_14836"
 C_GAME = "field_14847"
 C_STATUS = "field_14849"
-C_CONDITION = "field_14850"
 C_PURCHASE_PRICE = "field_14851"
 C_PURCHASE_DATE = "field_14852"
 C_PURCHASED_FROM = "field_14853"
 C_LOCATION = "field_14854"
 C_NOTES = "field_14855"
+C_SEALED = "field_14871"
+C_HAS_DISC = "field_14865"
+C_DISC_QUALITY = "field_14866"
+C_HAS_CASE = "field_14867"
+C_CASE_QUALITY = "field_14868"
+C_HAS_MANUAL = "field_14869"
+C_MANUAL_QUALITY = "field_14870"
 
 STATUS_OPTIONS = {"Collection": 3863, "For Sale": 3864, "Sold": 3865}
 STATUS_OPTIONS_BY_ID = {v: k for k, v in STATUS_OPTIONS.items()}
-
-CONDITION_OPTIONS = {
-    "Sealed": 3866,
-    "Complete In Box": 3867,
-    "Disc/Cart Only": 3868,
-    "Case/Manual Only": 3869,
-}
-CONDITION_OPTIONS_BY_ID = {v: k for k, v in CONDITION_OPTIONS.items()}
 
 # Sales (1376)
 S_SALE_ID = "field_14839"

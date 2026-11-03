@@ -3,13 +3,17 @@ import { api } from './client'
 export const PLATFORMS = ['OG Xbox', 'Xbox 360', 'Xbox One', 'Xbox Series X|S'] as const
 export type Platform = (typeof PLATFORMS)[number]
 
+export const CIB_COMPONENTS = ['Disc', 'Case', 'Manual'] as const
+export type CibComponent = (typeof CIB_COMPONENTS)[number]
+
 export interface Game {
   id: number
   title: string
   platform: Platform | null
   target: boolean
   upgrade_to_id: number | null
-  target_price: number | null
+  market_price: number | null
+  cib_requires: CibComponent[]
   notes: string
 }
 
@@ -18,7 +22,8 @@ export interface GameCreate {
   platform: Platform
   target?: boolean
   upgrade_to_id?: number | null
-  target_price?: number | null
+  market_price?: number | null
+  cib_requires?: CibComponent[]
   notes?: string
 }
 
@@ -27,7 +32,8 @@ export interface GameUpdate {
   platform?: Platform
   target?: boolean
   upgrade_to_id?: number | null
-  target_price?: number | null
+  market_price?: number | null
+  cib_requires?: CibComponent[]
   notes?: string
 }
 
