@@ -76,6 +76,13 @@ class GameOut(BaseModel):
     notes: str
 
 
+class GamePage(BaseModel):
+    items: list[GameOut]
+    total: int  # games matching the search/filter, across all pages
+    page: int
+    size: int
+
+
 class GameCreate(BaseModel):
     title: str
     platform: str

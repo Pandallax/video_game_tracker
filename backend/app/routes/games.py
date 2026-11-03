@@ -1,6 +1,7 @@
+import asyncio
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.auth.deps import require_auth
 from app.baserow import field_ids as f
@@ -10,6 +11,7 @@ from app.schemas import (
     EditionOptions,
     GameCreate,
     GameOut,
+    GamePage,
     GamePrices,
     GameUpdate,
     changed_price_fields,
@@ -87,10 +89,43 @@ async def list_editions():
     return EditionOptions(configured=True, options=list(fld.options), free_text=not fld.is_select)
 
 
+def search_params(search: str = "", platform: str | None = None) -> dict[str, str]:
+    """Baserow query params for a Games page: sorted by title, optionally
+    narrowed by platform and a search. An all-digit search matches UPCs (so a
+    scanned or typed barcode works); anything else matches the title."""
+    params = {"order_by": f.G_TITLE}
+    if platform:
+        if platform not in f.PLATFORM_OPTIONS:
+            raise HTTPException(status_code=400, detail=f"Unknown platform: {platform}")
+        params[f"filter__{f.G_PLATFORM}__single_select_equal"] = str(f.PLATFORM_OPTIONS[platform])
+    search = search.strip()
+    if search:
+        digits = search.replace(" ", "").replace("-", "")
+        if digits.isdigit() and len(digits) >= 4:
+            params[f"filter__{f.G_UPC}__contains"] = normalize_upc(digits)
+        else:
+            params[f"filter__{f.G_TITLE}__contains"] = search
+    return params
+
+
+@router.get("/page", response_model=GamePage)
+async def list_games_page(
+    search: str = "",
+    platform: str | None = None,
+    page: int = Query(default=1, ge=1),
+    size: int = Query(default=48, ge=1, le=200),
+):
+    """One page of games for the Games page (fast first paint + search)."""
+    (rows, total), edition_key = await asyncio.gather(
+        baserow_client.list_rows_page(f.TABLE_GAMES, page=page, size=size, params=search_params(search, platform)),
+        _edition_key(),
+    )
+    return GamePage(items=[game_row_to_out(row, edition_key) for row in rows], total=total, page=page, size=size)
+
+
 @router.get("", response_model=list[GameOut])
 async def list_games(platform: str | None = None):
-    rows = await baserow_client.list_rows(f.TABLE_GAMES)
-    edition_key = await _edition_key()
+    rows, edition_key = await asyncio.gather(baserow_client.list_rows(f.TABLE_GAMES), _edition_key())
     games = [game_row_to_out(row, edition_key) for row in rows]
     if platform:
         games = [g for g in games if g.platform == platform]

@@ -673,3 +673,37 @@ button:disabled {
     font-size: 1.25rem;
   }
 }
+
+/* ---- Games: search + paging ---- */
+
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.search-input {
+  width: 18rem;
+  max-width: 100%;
+  background: #0f1115;
+  border: 1px solid #333;
+  color: #e6e8eb;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+
+.result-count {
+  font-size: 0.85rem;
+}
+
+.is-stale {
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+
+.load-more {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 0 0.5rem;
+}

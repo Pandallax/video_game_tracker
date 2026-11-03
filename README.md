@@ -74,6 +74,12 @@ be added in Baserow at any time): blank is the normal release, otherwise e.g.
 "Platinum Hits". Platinum Hits games get a silver/platinum card and badge;
 other editions get a purple one.
 
+The Games page loads 48 games at a time (sorted by title, via
+`GET /api/games/page`) and fetches more as you scroll, so it opens quickly
+however big the catalog gets. The search box filters on the server: text
+matches titles, 4+ digits match UPCs. Pages that still need every game
+(Copies, Dashboard) fetch Baserow's pages in parallel.
+
 The Games page has a Table / Cards toggle (remembered per browser). Cards show
 large cover art, title, platform, edition, the CIB price up front and the
 other prices underneath.
