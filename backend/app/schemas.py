@@ -13,6 +13,7 @@ class GameOut(BaseModel):
     upgrade_to_id: int | None
     market_price: float | None
     cib_requires: list[str]
+    upc: str
     notes: str
 
 
@@ -23,6 +24,7 @@ class GameCreate(BaseModel):
     upgrade_to_id: int | None = None
     market_price: float | None = None
     cib_requires: list[str] = list(CIB_COMPONENTS)
+    upc: str = ""
     notes: str = ""
 
 
@@ -33,6 +35,7 @@ class GameUpdate(BaseModel):
     upgrade_to_id: int | None = None
     market_price: float | None = None
     cib_requires: list[str] | None = None
+    upc: str | None = None
     notes: str | None = None
 
 
@@ -121,6 +124,14 @@ class PlatformStats(BaseModel):
     total: int
 
 
+def normalize_upc(upc: str) -> str:
+    """Strip non-digits and leading zeros so UPC-A and its EAN-13 zero-prefixed
+    form compare equal (e.g. a scanner reading "0012345678905" vs a label
+    printed "12345678905")."""
+    digits = "".join(c for c in upc if c.isdigit())
+    return digits.lstrip("0") or digits
+
+
 def game_row_to_out(row: dict) -> GameOut:
     platform = row.get(f.G_PLATFORM)
     upgrade = row.get(f.G_UPGRADE_TO) or []
@@ -133,6 +144,7 @@ def game_row_to_out(row: dict) -> GameOut:
         upgrade_to_id=upgrade[0]["id"] if upgrade else None,
         market_price=float(row[f.G_MARKET_PRICE]) if row.get(f.G_MARKET_PRICE) else None,
         cib_requires=cib_requires,
+        upc=row.get(f.G_UPC) or "",
         notes=row.get(f.G_NOTES) or "",
     )
 

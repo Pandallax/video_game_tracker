@@ -21,6 +21,7 @@ export function GamesPage() {
   const [target, setTarget] = useState(true)
   const [marketPrice, setMarketPrice] = useState('')
   const [cibRequires, setCibRequires] = useState<CibComponent[]>([...CIB_COMPONENTS])
+  const [upc, setUpc] = useState('')
 
   const refresh = () => listGames(platformFilter || undefined).then(setGames)
 
@@ -39,10 +40,12 @@ export function GamesPage() {
       target,
       market_price: marketPrice ? Number(marketPrice) : null,
       cib_requires: cibRequires,
+      upc: upc.trim(),
     })
     setTitle('')
     setMarketPrice('')
     setCibRequires([...CIB_COMPONENTS])
+    setUpc('')
     refresh()
   }
 
@@ -61,6 +64,12 @@ export function GamesPage() {
 
   const toggleNewCibComponent = (component: CibComponent) => {
     setCibRequires((prev) => (prev.includes(component) ? prev.filter((c) => c !== component) : [...prev, component]))
+  }
+
+  const commitUpc = async (game: Game, value: string) => {
+    if (value === game.upc) return
+    await updateGame(game.id, { upc: value.trim() })
+    refresh()
   }
 
   const handleDelete = async (id: number) => {
@@ -92,6 +101,7 @@ export function GamesPage() {
           value={marketPrice}
           onChange={(e) => setMarketPrice(e.target.value)}
         />
+        <input placeholder="UPC" value={upc} onChange={(e) => setUpc(e.target.value)} />
         <span className="cib-picker">
           CIB requires:
           {CIB_COMPONENTS.map((c) => (
@@ -125,6 +135,7 @@ export function GamesPage() {
               <th>Platform</th>
               <th>Target</th>
               <th>Market price</th>
+              <th>UPC</th>
               <th>CIB requires</th>
               <th></th>
             </tr>
@@ -138,6 +149,14 @@ export function GamesPage() {
                   <input type="checkbox" checked={g.target} onChange={() => toggleTarget(g)} />
                 </td>
                 <td>{g.market_price != null ? `$${g.market_price.toFixed(2)}` : '—'}</td>
+                <td>
+                  <input
+                    className="upc-cell"
+                    defaultValue={g.upc}
+                    placeholder="—"
+                    onBlur={(e) => commitUpc(g, e.target.value)}
+                  />
+                </td>
                 <td>
                   <span className="cib-picker">
                     {CIB_COMPONENTS.map((c) => (

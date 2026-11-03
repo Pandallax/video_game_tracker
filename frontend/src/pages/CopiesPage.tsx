@@ -1,15 +1,19 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { listGames, type Game } from '../api/games'
 import { createCopy, deleteCopy, listCopies, updateCopy, STATUSES, type Copy, type CopyStatus } from '../api/copies'
 
 export function CopiesPage() {
+  const [searchParams] = useSearchParams()
+  const preselectGameId = searchParams.get('game')
+
   const [copies, setCopies] = useState<Copy[]>([])
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('')
 
   const [copyId, setCopyId] = useState('')
-  const [gameId, setGameId] = useState<number | ''>('')
+  const [gameId, setGameId] = useState<number | ''>(preselectGameId ? Number(preselectGameId) : '')
   const [sealed, setSealed] = useState(false)
   const [hasDisc, setHasDisc] = useState(true)
   const [discQuality, setDiscQuality] = useState('8')

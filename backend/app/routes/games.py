@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.auth.deps import require_auth
 from app.baserow import field_ids as f
 from app.baserow.client import BaserowError, baserow_client
-from app.schemas import GameCreate, GameOut, GameUpdate, game_row_to_out
+from app.schemas import GameCreate, GameOut, GameUpdate, game_row_to_out, normalize_upc
 
 router = APIRouter(prefix="/api/games", tags=["games"], dependencies=[Depends(require_auth)])
 
@@ -24,6 +24,20 @@ async def list_games(platform: str | None = None):
     return sorted(games, key=lambda g: g.title.lower())
 
 
+@router.get("/by-upc/{upc}", response_model=GameOut)
+async def get_game_by_upc(upc: str):
+    target = normalize_upc(upc)
+    if not target:
+        raise HTTPException(status_code=400, detail="Invalid UPC")
+
+    rows = await baserow_client.list_rows(f.TABLE_GAMES)
+    for row in rows:
+        row_upc = row.get(f.G_UPC) or ""
+        if row_upc and normalize_upc(row_upc) == target:
+            return game_row_to_out(row)
+    raise HTTPException(status_code=404, detail="No game found for that UPC")
+
+
 @router.post("", response_model=GameOut, status_code=201)
 async def create_game(body: GameCreate):
     if body.platform not in f.PLATFORM_OPTIONS:
@@ -35,6 +49,7 @@ async def create_game(body: GameCreate):
         f.G_TARGET: body.target,
         f.G_MARKET_PRICE: body.market_price,
         f.G_CIB_REQUIRES: _cib_option_ids(body.cib_requires),
+        f.G_UPC: body.upc,
         f.G_NOTES: body.notes,
     }
     if body.upgrade_to_id is not None:
@@ -61,6 +76,8 @@ async def update_game(game_id: int, body: GameUpdate):
         values[f.G_MARKET_PRICE] = body.market_price
     if body.cib_requires is not None:
         values[f.G_CIB_REQUIRES] = _cib_option_ids(body.cib_requires)
+    if body.upc is not None:
+        values[f.G_UPC] = body.upc
     if body.notes is not None:
         values[f.G_NOTES] = body.notes
 

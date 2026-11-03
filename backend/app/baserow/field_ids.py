@@ -13,6 +13,7 @@ G_UPGRADE_TO = "field_14844"
 G_MARKET_PRICE = "field_14845"
 G_NOTES = "field_14846"
 G_CIB_REQUIRES = "field_14864"
+G_UPC = "field_14872"
 
 PLATFORM_OPTIONS = {
     "OG Xbox": 3859,

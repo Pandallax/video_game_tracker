@@ -1,4 +1,4 @@
-import { api } from './client'
+import { api, ApiError } from './client'
 
 export const PLATFORMS = ['OG Xbox', 'Xbox 360', 'Xbox One', 'Xbox Series X|S'] as const
 export type Platform = (typeof PLATFORMS)[number]
@@ -14,6 +14,7 @@ export interface Game {
   upgrade_to_id: number | null
   market_price: number | null
   cib_requires: CibComponent[]
+  upc: string
   notes: string
 }
 
@@ -24,6 +25,7 @@ export interface GameCreate {
   upgrade_to_id?: number | null
   market_price?: number | null
   cib_requires?: CibComponent[]
+  upc?: string
   notes?: string
 }
 
@@ -34,6 +36,7 @@ export interface GameUpdate {
   upgrade_to_id?: number | null
   market_price?: number | null
   cib_requires?: CibComponent[]
+  upc?: string
   notes?: string
 }
 
@@ -45,3 +48,12 @@ export const createGame = (body: GameCreate) => api.post<Game>('/games', body)
 export const updateGame = (id: number, body: GameUpdate) => api.patch<Game>(`/games/${id}`, body)
 
 export const deleteGame = (id: number) => api.delete<void>(`/games/${id}`)
+
+export const getGameByUpc = async (upc: string): Promise<Game | null> => {
+  try {
+    return await api.get<Game>(`/games/by-upc/${encodeURIComponent(upc)}`)
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null
+    throw err
+  }
+}

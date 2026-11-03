@@ -143,6 +143,42 @@ button {
   align-items: flex-start;
 }
 
+.scanner-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.scanner-video {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 10px;
+  background: #000;
+}
+
+.scan-result {
+  background: #171a21;
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  max-width: 420px;
+}
+
+.scan-result h3 {
+  margin-top: 0;
+}
+
+.upc-cell {
+  width: 7rem;
+  background: #0f1115;
+  border: 1px solid #333;
+  color: #e6e8eb;
+  padding: 0.4rem;
+  border-radius: 6px;
+}
+
 .inline-form {
   display: flex;
   flex-wrap: wrap;
