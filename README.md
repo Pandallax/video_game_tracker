@@ -38,8 +38,9 @@ cd backend
 ## Data model (Baserow database "Game Tracker", id 339)
 
 - **Games** (table 1374): Title, Platform, Target, Upgrade to (self-link),
-  Market price, Price updated (date, stamped by the app whenever Market price
-  changes), CIB Requires (Disc/Case/Manual -- which components count as
+  per-condition prices -- Loose price (disc only), Market price (the CIB /
+  complete-in-box price), Sealed price, Box only price, Manual only price --
+  Price updated (date, stamped by the app whenever any price changes), CIB Requires (Disc/Case/Manual -- which components count as
   "Complete In Box" for this title), UPC, Cover URL, Completionator URL,
   Notes. Platinum Hits / other editions get their own row with `Upgrade to`
   pointing at the base edition; `Target` is off unless that specific printing
@@ -55,6 +56,15 @@ cd backend
 - **Sales** (table 1376): Sale ID, Copy (link), Sold on, Sale date, Sale
   price, Fees, Shipping cost, Net (formula).
 
+Market price was the only price field originally and is kept as the CIB
+price. The other price fields are optional: create them in Baserow as Number
+fields (2 decimal places) named as above, then paste their ids into
+`field_ids.py` (`G_LOOSE_PRICE`, `G_SEALED_PRICE`, `G_BOX_ONLY_PRICE`,
+`G_MANUAL_ONLY_PRICE`). The Games page only shows columns for the ones that
+are set. The Copies page shows an estimated value per copy: the Sealed or CIB
+price when it is sealed or complete, otherwise the loose + box-only +
+manual-only prices for the parts it has, capped at CIB.
+
 Completion stats only count `Collection` copies of `Target`-flagged games.
 
 The Dashboard has a "Scan UPC" button that opens the phone camera
@@ -68,8 +78,8 @@ title and console.
 
 `scripts/import_completionator.py` compares saved pages of a Completionator
 checklist (no export exists, so save each page from the browser) against the
-Games table, and can add missing games/editions, fill Market price from the
-checklist's loose/complete/new prices, and store each game's Completionator
+Games table, and can add missing games/editions, fill the Loose / CIB /
+Sealed prices from the checklist's loose/complete/new columns, and store each game's Completionator
 link. It only writes a report unless given flags; see its docstring.
 
 Copies can have their own photo (Copies page: click the thumbnail). Uploads

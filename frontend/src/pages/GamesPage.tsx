@@ -7,7 +7,11 @@ import {
   PLATFORMS,
   priceChartingUrl,
   CIB_COMPONENTS,
+  PRICE_KINDS,
+  PRICE_LABELS,
+  PRICE_DESCRIPTIONS,
   type Game,
+  type PriceKind,
   type Platform,
   type CibComponent,
 } from '../api/games'
@@ -21,9 +25,12 @@ export function GamesPage() {
   const [title, setTitle] = useState('')
   const [platform, setPlatform] = useState<Platform>('OG Xbox')
   const [target, setTarget] = useState(true)
-  const [marketPrice, setMarketPrice] = useState('')
+  const [newPrices, setNewPrices] = useState<Partial<Record<PriceKind, string>>>({})
   const [cibRequires, setCibRequires] = useState<CibComponent[]>([...CIB_COMPONENTS])
   const [upc, setUpc] = useState('')
+
+  // Only show price kinds that have a Baserow field (CIB always does).
+  const priceKinds: PriceKind[] = games.length ? PRICE_KINDS.filter((k) => games[0].price_kinds.includes(k)) : ['cib']
 
   const refresh = () => listGames(platformFilter || undefined).then(setGames)
 
@@ -40,12 +47,16 @@ export function GamesPage() {
       title: title.trim(),
       platform,
       target,
-      market_price: marketPrice ? Number(marketPrice) : null,
+      prices: Object.fromEntries(
+        Object.entries(newPrices)
+          .filter(([, v]) => v && v.trim() !== '')
+          .map(([k, v]) => [k, Number(v)]),
+      ),
       cib_requires: cibRequires,
       upc: upc.trim(),
     })
     setTitle('')
-    setMarketPrice('')
+    setNewPrices({})
     setCibRequires([...CIB_COMPONENTS])
     setUpc('')
     refresh()
@@ -74,11 +85,11 @@ export function GamesPage() {
     refresh()
   }
 
-  const saveMarketPrice = async (game: Game, raw: string) => {
+  const savePrice = async (game: Game, kind: PriceKind, raw: string) => {
     const next = raw.trim() === '' ? null : Number(raw)
     if (next !== null && Number.isNaN(next)) return
-    if (next === game.market_price) return
-    await updateGame(game.id, { market_price: next })
+    if (next === game.prices[kind]) return
+    await updateGame(game.id, { prices: { [kind]: next } })
     refresh()
   }
 
@@ -111,13 +122,18 @@ export function GamesPage() {
           <input type="checkbox" checked={target} onChange={(e) => setTarget(e.target.checked)} />
           Target
         </label>
-        <input
-          placeholder="Market price"
-          type="number"
-          step="0.01"
-          value={marketPrice}
-          onChange={(e) => setMarketPrice(e.target.value)}
-        />
+        {priceKinds.map((k) => (
+          <input
+            key={k}
+            className="price-input"
+            placeholder={`${PRICE_LABELS[k]} $`}
+            title={PRICE_DESCRIPTIONS[k]}
+            type="number"
+            step="0.01"
+            value={newPrices[k] ?? ''}
+            onChange={(e) => setNewPrices((prev) => ({ ...prev, [k]: e.target.value }))}
+          />
+        ))}
         <input placeholder="UPC" value={upc} onChange={(e) => setUpc(e.target.value)} />
         <span className="cib-picker">
           CIB requires:
@@ -152,7 +168,11 @@ export function GamesPage() {
               <th>Title</th>
               <th>Platform</th>
               <th>Target</th>
-              <th>Market price</th>
+              {priceKinds.map((k) => (
+                <th key={k} title={PRICE_DESCRIPTIONS[k]}>
+                  {PRICE_LABELS[k]}
+                </th>
+              ))}
               <th>Price updated</th>
               <th>UPC</th>
               <th>CIB requires</th>
@@ -185,18 +205,21 @@ export function GamesPage() {
                 <td>
                   <input type="checkbox" checked={g.target} onChange={() => toggleTarget(g)} />
                 </td>
-                <td>
-                  <input
-                    key={`${g.id}-${g.market_price}`}
-                    className="price-input"
-                    type="number"
-                    step="0.01"
-                    placeholder="—"
-                    defaultValue={g.market_price ?? ''}
-                    onBlur={(e) => saveMarketPrice(g, e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                  />
-                </td>
+                {priceKinds.map((k) => (
+                  <td key={k}>
+                    <input
+                      key={`${g.id}-${k}-${g.prices[k]}`}
+                      className="price-input"
+                      type="number"
+                      step="0.01"
+                      placeholder="—"
+                      title={`${PRICE_LABELS[k]}: ${PRICE_DESCRIPTIONS[k]}`}
+                      defaultValue={g.prices[k] ?? ''}
+                      onBlur={(e) => savePrice(g, k, e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                    />
+                  </td>
+                ))}
                 <td className="muted">{g.price_updated ?? '—'}</td>
                 <td>
                   <input

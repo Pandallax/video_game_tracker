@@ -5,13 +5,25 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.auth.deps import require_auth
 from app.baserow import field_ids as f
 from app.baserow.client import BaserowError, baserow_client
-from app.schemas import GameCreate, GameOut, GameUpdate, game_row_to_out, normalize_upc
+from app.schemas import GameCreate, GameOut, GamePrices, GameUpdate, game_row_to_out, normalize_upc, price_fields
 
 router = APIRouter(prefix="/api/games", tags=["games"], dependencies=[Depends(require_auth)])
 
 
-def _set_market_price(values: dict, price: float | None) -> None:
-    values[f.G_MARKET_PRICE] = price
+def _set_prices(values: dict, prices: GamePrices) -> None:
+    """Write the price kinds that were sent (null clears one) and stamp Price updated."""
+    sent = prices.model_fields_set
+    if not sent:
+        return
+    fields = price_fields()
+    missing = sorted(kind for kind in sent if not fields[kind])
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Price field(s) not configured in Baserow (see field_ids.py): {', '.join(missing)}",
+        )
+    for kind in sent:
+        values[fields[kind]] = getattr(prices, kind)
     if f.G_PRICE_UPDATED:
         values[f.G_PRICE_UPDATED] = date.today().isoformat()
 
@@ -67,8 +79,8 @@ async def create_game(body: GameCreate):
     }
     if body.upgrade_to_id is not None:
         values[f.G_UPGRADE_TO] = [body.upgrade_to_id]
-    if body.market_price is not None:
-        _set_market_price(values, body.market_price)
+    if body.prices is not None:
+        _set_prices(values, body.prices)
     if body.cover_url:
         _set_cover(values, body.cover_url)
 
@@ -89,8 +101,8 @@ async def update_game(game_id: int, body: GameUpdate):
         values[f.G_TARGET] = body.target
     if body.upgrade_to_id is not None:
         values[f.G_UPGRADE_TO] = [body.upgrade_to_id] if body.upgrade_to_id else []
-    if "market_price" in body.model_fields_set:
-        _set_market_price(values, body.market_price)
+    if body.prices is not None:
+        _set_prices(values, body.prices)
     if body.cib_requires is not None:
         values[f.G_CIB_REQUIRES] = _cib_option_ids(body.cib_requires)
     if body.upc is not None:
