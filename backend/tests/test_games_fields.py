@@ -20,14 +20,14 @@ def test_price_change_stamps_price_updated(monkeypatch):
     monkeypatch.setattr(f, "G_PRICE_UPDATED", "field_price_updated")
     values: dict = {}
     games._set_prices(values, GamePrices(cib=12.5))
-    assert values == {f.G_MARKET_PRICE: 12.5, "field_price_updated": date.today().isoformat()}
+    assert values == {f.G_CIB_PRICE: 12.5, "field_price_updated": date.today().isoformat()}
 
 
 def test_price_clear_without_price_updated_field(monkeypatch):
     monkeypatch.setattr(f, "G_PRICE_UPDATED", None)
     values: dict = {}
     games._set_prices(values, GamePrices(cib=None))
-    assert values == {f.G_MARKET_PRICE: None}
+    assert values == {f.G_CIB_PRICE: None}
 
 
 def test_only_sent_price_kinds_are_written(monkeypatch):
@@ -59,7 +59,7 @@ def test_game_row_reads_prices(monkeypatch):
     monkeypatch.setattr(f, "G_SEALED_PRICE", "field_sealed")
     monkeypatch.setattr(f, "G_BOX_ONLY_PRICE", None)
     monkeypatch.setattr(f, "G_MANUAL_ONLY_PRICE", None)
-    row = {"id": 1, f.G_TITLE: "Halo", "field_loose": "5.25", f.G_MARKET_PRICE: "12.00", "field_sealed": None}
+    row = {"id": 1, f.G_TITLE: "Halo", "field_loose": "5.25", f.G_CIB_PRICE: "12.00", "field_sealed": None}
     game = game_row_to_out(row)
     assert game.prices == GamePrices(loose=5.25, cib=12.0)
     assert game.price_kinds == ["loose", "cib", "sealed"]

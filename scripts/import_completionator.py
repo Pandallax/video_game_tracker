@@ -17,9 +17,9 @@ the current directory and changes nothing. Add flags to write:
 
     --add-missing      create Games rows for checklist entries with no match
     --set-prices [KIND ...]
-                       fill prices from the checklist: loose -> Loose price,
-                       complete -> CIB price ("Market price"), new -> Sealed
-                       price. All three by default, or name the ones you want.
+                       fill prices from the checklist: loose -> Loose Price,
+                       complete -> CIB Price, new -> Sealed Price. All
+                       three by default, or name the ones you want.
                        Only fills empty prices unless --overwrite-prices
     --set-links        fill "Completionator URL" (if that field exists)
 
@@ -194,9 +194,9 @@ async def optional_field(client, name: str) -> str | None:
 
 # Checklist column -> (field_ids attribute, Baserow field name to look up if that attribute is None)
 PRICE_COLUMNS = {
-    "loose": ("G_LOOSE_PRICE", "Loose price"),
-    "complete": ("G_MARKET_PRICE", "Market price"),
-    "new": ("G_SEALED_PRICE", "Sealed price"),
+    "loose": ("G_LOOSE_PRICE", "Loose Price"),
+    "complete": ("G_CIB_PRICE", "CIB Price"),
+    "new": ("G_SEALED_PRICE", "Sealed Price"),
 }
 
 

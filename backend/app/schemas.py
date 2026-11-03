@@ -13,7 +13,7 @@ def price_fields() -> dict[str, str | None]:
     Looked up at call time so field_ids can be patched in tests."""
     return {
         "loose": f.G_LOOSE_PRICE,
-        "cib": f.G_MARKET_PRICE,
+        "cib": f.G_CIB_PRICE,
         "sealed": f.G_SEALED_PRICE,
         "box_only": f.G_BOX_ONLY_PRICE,
         "manual_only": f.G_MANUAL_ONLY_PRICE,
