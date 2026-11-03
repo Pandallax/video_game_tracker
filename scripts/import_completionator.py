@@ -16,8 +16,11 @@ By default the script only reports -- it writes completionator_report.csv in
 the current directory and changes nothing. Add flags to write:
 
     --add-missing      create Games rows for checklist entries with no match
-    --set-prices KIND  fill Market price from the checklist (complete / loose /
-                       new); only games with no price unless --overwrite-prices
+    --set-prices [KIND ...]
+                       fill prices from the checklist: loose -> Loose Price,
+                       complete -> CIB Price, new -> Sealed Price. All
+                       three by default, or name the ones you want.
+                       Only fills empty prices unless --overwrite-prices
     --set-links        fill "Completionator URL" (if that field exists)
 
 Titles that look close but aren't exact (e.g. punctuation differences) are
@@ -26,7 +29,7 @@ duplicates. Rename them in Baserow to match, then re-run.
 
 Usage (run on the VM, where .env has the real Baserow token):
     cd backend && ./.venv/bin/python ../scripts/import_completionator.py ~/checklist/*.htm \\
-        [--platform "OG Xbox"] [--add-missing] [--set-prices complete] [--set-links]
+        [--platform "OG Xbox"] [--add-missing] [--set-prices] [--set-links]
 """
 import argparse
 import asyncio
@@ -189,13 +192,22 @@ async def optional_field(client, name: str) -> str | None:
     return None
 
 
+# Checklist column -> (field_ids attribute, Baserow field name to look up if that attribute is None)
+PRICE_COLUMNS = {
+    "loose": ("G_LOOSE_PRICE", "Loose Price"),
+    "complete": ("G_CIB_PRICE", "CIB Price"),
+    "new": ("G_SEALED_PRICE", "Sealed Price"),
+}
+
+
 async def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("files", nargs="+", type=Path, help="saved checklist pages (.htm/.html)")
     parser.add_argument("--platform", default="OG Xbox", choices=list(f.PLATFORM_OPTIONS))
     parser.add_argument("--include-unofficial", action="store_true", help="keep non-'Official Release' rows")
     parser.add_argument("--add-missing", action="store_true")
-    parser.add_argument("--set-prices", choices=["complete", "loose", "new"])
+    parser.add_argument("--set-prices", nargs="*", choices=list(PRICE_COLUMNS), metavar="KIND",
+                        help="loose / complete / new (default: all three)")
     parser.add_argument("--overwrite-prices", action="store_true")
     parser.add_argument("--set-links", action="store_true")
     args = parser.parse_args()
@@ -261,17 +273,26 @@ async def main() -> int:
         print(f"\nAdded {len(bases)} base games and {len(edition_entries)} editions")
 
     updates: dict[int, dict] = {}
-    if args.set_prices:
+    if args.set_prices is not None:
         price_updated = await optional_field(baserow_client, "Price updated")
         today = date.today().isoformat()
+        targets: dict[str, str] = {}
+        for column in args.set_prices or list(PRICE_COLUMNS):
+            attr, name = PRICE_COLUMNS[column]
+            field = getattr(f, attr) or await optional_field(baserow_client, name)
+            if field is None:
+                print(f'No "{name}" field on Games -- skipping {column} prices')
+            else:
+                targets[column] = field
         for e, row_id in comparison.matched:
-            price = getattr(e, args.set_prices)
-            if price is None or (row_by_id[row_id].get(f.G_MARKET_PRICE) and not args.overwrite_prices):
-                continue
-            values = updates.setdefault(row_id, {})
-            values[f.G_MARKET_PRICE] = price
-            if price_updated:
-                values[price_updated] = today
+            for column, field in targets.items():
+                price = getattr(e, column)
+                if price is None or (row_by_id[row_id].get(field) and not args.overwrite_prices):
+                    continue
+                values = updates.setdefault(row_id, {})
+                values[field] = price
+                if price_updated:
+                    values[price_updated] = today
     if args.set_links:
         link_field = await optional_field(baserow_client, "Completionator URL")
         if link_field is None:

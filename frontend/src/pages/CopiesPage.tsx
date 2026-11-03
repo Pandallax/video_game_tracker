@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { listGames, type Game } from '../api/games'
+import { estimateValue, listGames, type Game } from '../api/games'
 import { Cover } from '../components/Cover'
 import {
   createCopy,
@@ -38,7 +38,13 @@ export function CopiesPage() {
   const [purchasedFrom, setPurchasedFrom] = useState('')
   const [location, setLocation] = useState('')
 
-  const coverByGameId = new Map(games.map((g) => [g.id, g.cover_url]))
+  const gameById = new Map(games.map((g) => [g.id, g]))
+
+  const formatValue = (copy: Copy) => {
+    const game = copy.game_id != null ? gameById.get(copy.game_id) : undefined
+    const value = game ? estimateValue(game.prices, copy) : null
+    return value != null ? `$${value.toFixed(2)}` : '—'
+  }
 
   const refresh = () => listCopies(statusFilter ? { status: statusFilter } : undefined).then(setCopies)
 
@@ -218,6 +224,9 @@ export function CopiesPage() {
               <th>Completeness</th>
               <th>Quality</th>
               <th>Purchase price</th>
+              <th title="From the game's loose / CIB / sealed / box-only / manual-only prices, based on what this copy includes">
+                Est. value
+              </th>
               <th>Location</th>
               <th></th>
             </tr>
@@ -232,7 +241,7 @@ export function CopiesPage() {
                       title={c.photo_url ? 'Replace photo' : 'Upload a photo of this copy'}
                     >
                       <Cover
-                        url={c.photo_url ?? (c.game_id != null ? coverByGameId.get(c.game_id) : null)}
+                        url={c.photo_url ?? (c.game_id != null ? gameById.get(c.game_id)?.cover_url : null)}
                         title={c.game_title ?? ''}
                         size="thumb"
                       />
@@ -268,6 +277,7 @@ export function CopiesPage() {
                 <td>{c.completeness}</td>
                 <td>{c.overall_quality != null ? `${c.overall_quality}/10` : '—'}</td>
                 <td>{c.purchase_price != null ? `$${c.purchase_price.toFixed(2)}` : '—'}</td>
+                <td>{formatValue(c)}</td>
                 <td>{c.location}</td>
                 <td>
                   <button onClick={() => handleDelete(c.id)}>Delete</button>
