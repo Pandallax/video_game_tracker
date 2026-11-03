@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx
 
 from app.config import settings
@@ -15,24 +17,48 @@ class BaserowClient:
         self._base_url = settings.baserow_url.rstrip("/")
         self._headers = {"Authorization": f"Token {settings.baserow_api_token}"}
 
+    async def list_rows_page(
+        self,
+        table_id: int,
+        *,
+        page: int = 1,
+        size: int = 200,
+        params: dict[str, str] | None = None,
+        client: httpx.AsyncClient | None = None,
+    ) -> tuple[list[dict], int]:
+        """One page of rows plus the total matching count. `params` are passed
+        straight to Baserow (filter__field_X__type, order_by, search, ...)."""
+        query = {"size": size, "page": page, **(params or {})}
+        url = f"{self._base_url}/api/database/rows/table/{table_id}/"
+        if client is None:
+            async with httpx.AsyncClient(timeout=15) as own_client:
+                resp = await own_client.get(url, headers=self._headers, params=query)
+        else:
+            resp = await client.get(url, headers=self._headers, params=query)
+        if resp.status_code == 404 and page > 1:
+            return [], 0  # past the last page
+        if resp.status_code != 200:
+            raise BaserowError(resp.status_code, resp.text)
+        data = resp.json()
+        return data["results"], data.get("count", len(data["results"]))
+
     async def list_rows(
         self, table_id: int, *, filters: dict[str, str] | None = None, size: int = 200
     ) -> list[dict]:
-        params = {"size": size, "page": 1}
-        if filters:
-            params.update(filters)
-
-        rows: list[dict] = []
-        async with httpx.AsyncClient(timeout=15) as client:
-            url = f"{self._base_url}/api/database/rows/table/{table_id}/"
-            while url:
-                resp = await client.get(url, headers=self._headers, params=params)
-                if resp.status_code != 200:
-                    raise BaserowError(resp.status_code, resp.text)
-                data = resp.json()
-                rows.extend(data["results"])
-                url = data.get("next")
-                params = None  # `next` already contains full query string
+        """Every row. Reads the first page to learn the total, then fetches the
+        remaining pages concurrently instead of one after another."""
+        async with httpx.AsyncClient(timeout=30) as client:
+            rows, count = await self.list_rows_page(table_id, size=size, params=filters, client=client)
+            pages = -(-count // size)  # ceil
+            if pages > 1:
+                rest = await asyncio.gather(
+                    *(
+                        self.list_rows_page(table_id, page=n, size=size, params=filters, client=client)
+                        for n in range(2, pages + 1)
+                    )
+                )
+                for page_rows, _ in rest:
+                    rows.extend(page_rows)
         return rows
 
     async def create_row(self, table_id: int, field_values: dict) -> dict:

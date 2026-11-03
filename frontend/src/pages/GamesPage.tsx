@@ -1,9 +1,9 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import {
   createGame,
   deleteGame,
   listEditions,
-  listGames,
+  listGamesPage,
   updateGame,
   editionClass,
   PLATFORMS,
@@ -31,6 +31,9 @@ interface Draft {
   cib_requires: CibComponent[]
   cover_url: string
 }
+
+const PAGE_SIZE = 48
+const SEARCH_DEBOUNCE_MS = 300
 
 type ViewMode = 'table' | 'cards'
 const VIEW_STORAGE_KEY = 'games-view'
@@ -68,6 +71,14 @@ function GameLinks({ game }: { game: Game }) {
 export function GamesPage() {
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [searchInput, setSearchInput] = useState('')
+  const [search, setSearch] = useState('')
+  const requestSeq = useRef(0)
+  const sentinelRef = useRef<HTMLDivElement>(null)
   const [platformFilter, setPlatformFilter] = useState<string>('')
   const [view, setView] = useState<ViewMode>(loadView)
   const [editions, setEditions] = useState<EditionOptions>({ configured: false, options: [], free_text: false })
@@ -88,13 +99,72 @@ export function GamesPage() {
   // Only show price kinds that have a Baserow field (CIB always does).
   const priceKinds: PriceKind[] = games.length ? PRICE_KINDS.filter((k) => games[0].price_kinds.includes(k)) : ['cib']
 
-  const refresh = () => listGames(platformFilter || undefined).then(setGames)
+  // Wait for a pause in typing before searching.
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearch(searchInput.trim()), SEARCH_DEBOUNCE_MS)
+    return () => window.clearTimeout(timer)
+  }, [searchInput])
+
+  /** Reload from the first page (new search/filter, or after adding a game). */
+  const refresh = async () => {
+    const request = ++requestSeq.current
+    setLoading(true)
+    setLoadError('')
+    try {
+      const result = await listGamesPage({ search, platform: platformFilter || undefined, page: 1, size: PAGE_SIZE })
+      if (request !== requestSeq.current) return // a newer search superseded this one
+      setGames(result.items)
+      setTotal(result.total)
+      setPage(1)
+    } catch (err) {
+      if (request === requestSeq.current) setLoadError(err instanceof Error ? err.message : 'Failed to load games')
+    } finally {
+      if (request === requestSeq.current) setLoading(false)
+    }
+  }
+
+  const loadMore = async () => {
+    if (loadingMore || loading || games.length >= total) return
+    const request = requestSeq.current
+    setLoadingMore(true)
+    try {
+      const result = await listGamesPage({
+        search,
+        platform: platformFilter || undefined,
+        page: page + 1,
+        size: PAGE_SIZE,
+      })
+      if (request !== requestSeq.current) return
+      setGames((prev) => {
+        const seen = new Set(prev.map((g) => g.id))
+        return [...prev, ...result.items.filter((g) => !seen.has(g.id))]
+      })
+      setTotal(result.total)
+      setPage(result.page)
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to load more games')
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   useEffect(() => {
-    setLoading(true)
-    refresh().finally(() => setLoading(false))
+    refresh()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [platformFilter])
+  }, [platformFilter, search])
+
+  // Load the next page automatically when the end of the list scrolls into view.
+  const loadMoreRef = useRef(loadMore)
+  loadMoreRef.current = loadMore
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) loadMoreRef.current()
+    }, { rootMargin: '600px' })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [loading, view, games.length, total])
 
   useEffect(() => {
     listEditions()
@@ -215,8 +285,8 @@ export function GamesPage() {
     setSaving(true)
     try {
       if (Object.keys(body).length) {
-        await updateGame(game.id, body)
-        await refresh()
+        const updated = await updateGame(game.id, body)
+        setGames((prev) => prev.map((g) => (g.id === updated.id ? updated : g)))
       }
       cancelEdit()
     } catch (err) {
@@ -229,7 +299,8 @@ export function GamesPage() {
   const handleDelete = async (game: Game) => {
     if (!window.confirm(`Delete ${game.title}?`)) return
     await deleteGame(game.id)
-    refresh()
+    setGames((prev) => prev.filter((g) => g.id !== game.id))
+    setTotal((t) => Math.max(0, t - 1))
   }
 
   // ---- Shared form controls ----
@@ -524,6 +595,16 @@ export function GamesPage() {
       </form>
 
       <div className="filter-row">
+        <div className="filter-group">
+          <input
+            type="search"
+            className="search-input"
+            placeholder="Search titles or UPC…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Escape' && setSearchInput('')}
+            aria-label="Search games"
+          />
         <select value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value)}>
           <option value="">All platforms</option>
           {PLATFORMS.map((p) => (
@@ -532,6 +613,14 @@ export function GamesPage() {
             </option>
           ))}
         </select>
+          <span className="muted result-count" aria-live="polite">
+            {loading && games.length === 0
+              ? ''
+              : total === 0
+                ? 'No games'
+                : `${games.length < total ? `${games.length} of ` : ''}${total} game${total === 1 ? '' : 's'}`}
+          </span>
+        </div>
         <div className="view-toggle" role="group" aria-label="View">
           <button className={view === 'table' ? 'active' : ''} aria-pressed={view === 'table'} onClick={() => changeView('table')}>
             Table
@@ -542,12 +631,15 @@ export function GamesPage() {
         </div>
       </div>
 
-      {loading ? (
+      {loadError && <p className="error">{loadError}</p>}
+      {loading && games.length === 0 ? (
         <p>Loading...</p>
+      ) : !loading && games.length === 0 ? (
+        <p className="muted">{search ? `No games match “${search}”.` : 'No games yet.'}</p>
       ) : view === 'cards' ? (
-        <div className="game-card-grid">{games.map(renderCard)}</div>
+        <div className={`game-card-grid${loading ? ' is-stale' : ''}`}>{games.map(renderCard)}</div>
       ) : (
-        <div className="table-scroll">
+        <div className={`table-scroll${loading ? ' is-stale' : ''}`}>
           <table className="data-table">
             <thead>
               <tr>
@@ -568,6 +660,14 @@ export function GamesPage() {
             </thead>
             <tbody>{games.map(renderTableRow)}</tbody>
           </table>
+        </div>
+      )}
+
+      {!loading && games.length > 0 && games.length < total && (
+        <div ref={sentinelRef} className="load-more">
+          <button className="secondary-button" onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? 'Loading…' : `Show more (${total - games.length} left)`}
+          </button>
         </div>
       )}
     </div>

@@ -77,6 +77,24 @@ export interface GameUpdate {
 export const listGames = (platform?: string) =>
   api.get<Game[]>(`/games${platform ? `?platform=${encodeURIComponent(platform)}` : ''}`)
 
+export interface GamePage {
+  items: Game[]
+  /** Games matching the search/filter across all pages. */
+  total: number
+  page: number
+  size: number
+}
+
+/** One page of games, sorted by title. A search of 4+ digits matches UPCs, otherwise titles. */
+export const listGamesPage = (opts: { search?: string; platform?: string; page?: number; size?: number }) => {
+  const params = new URLSearchParams()
+  if (opts.search?.trim()) params.set('search', opts.search.trim())
+  if (opts.platform) params.set('platform', opts.platform)
+  params.set('page', String(opts.page ?? 1))
+  params.set('size', String(opts.size ?? 48))
+  return api.get<GamePage>(`/games/page?${params}`)
+}
+
 export interface EditionOptions {
   /** Whether the Games table has an "Editions" field. */
   configured: boolean
