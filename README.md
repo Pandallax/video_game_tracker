@@ -62,15 +62,19 @@ The Dashboard has a "Scan UPC" button that opens the phone camera
 adding a copy. Camera access needs a secure context, which is why the VM
 serves `:8081` over TLS (see Deploy below).
 
-Cover URL is filled in by hand: click a game's thumbnail on the Games page
-and paste an image link (or edit the field in Baserow). Each game also links to a PriceCharting search for that
-title and console.
+Cover URL can be filled in by hand (click a game's thumbnail on the Games
+page and paste an image link, or edit the field in Baserow) or automatically
+from Completionator (see below). Each game also links to a PriceCharting
+search for that title and console.
 
-`scripts/import_completionator.py` compares saved pages of a Completionator
-checklist (no export exists, so save each page from the browser) against the
-Games table, and can add missing games/editions, fill Market price from the
-checklist's loose/complete/new prices, and store each game's Completionator
-link. It only writes a report unless given flags; see its docstring.
+`scripts/import_completionator.py` fetches Completionator's checklist
+directly from its public (robots.txt-allowed) API -- no saved pages needed,
+and this also gets accurate box art per specific printing, which a saved
+page can't capture. Compares against the Games table and can add missing
+games/editions, fill Market price from loose/complete/new prices, store each
+game's Completionator link, and fill Cover URL from Completionator's own box
+art. Only covers "OG Xbox" -- Completionator doesn't have a 360/One/Series X
+checklist yet. Only writes a report unless given flags; see its docstring.
 
 Copies can have their own photo (Copies page: click the thumbnail). Uploads
 are resized to at most 1600px and re-encoded as WebP at 85% quality

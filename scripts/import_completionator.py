@@ -1,32 +1,41 @@
-"""Compare saved Completionator checklist pages against the Games table, and
-optionally add missing games, fill in market prices and store Completionator
-links.
+"""Compare Completionator's live checklist against the Games table, and
+optionally add missing games/editions, fill market prices, cover art, and
+Completionator links.
 
-Completionator has no export, so save each page of the checklist from your
-browser (Ctrl+S, "Webpage, HTML only" is enough) and pass all the files:
+Fetches directly from Completionator's public checklist API -- their
+robots.txt explicitly allows /CollectionChecklist for automated access, and
+the page's own JS hits this same endpoint to render the table. No saved
+pages needed (browser "Save Page As" can't capture it anyway: the table
+loads via this AJAX call *after* the initial page load, so a saved copy of
+the page is always empty).
 
-    https://www.completionator.com/Checklist/microsoft-xbox-na-physical-games
+As of writing, Completionator only curates a NA physical checklist for the
+original Xbox -- Xbox 360/One/Series X aren't on the site yet -- so this
+only covers "OG Xbox".
 
 Each row has a title, an Edition (blank for the original release, or e.g.
-"Platinum Hits"), and loose / complete / new prices. Editions map to this
-app's convention of a separate "Title (Edition)" row whose Upgrade to points
-at the base title, with Target off (see README).
+"Platinum Hits"), loose/complete/new prices, and a box art image specific to
+that printing. Editions map to this app's convention of a separate
+"Title (Edition)" row whose Upgrade to points at the base title, with Target
+off (see README).
 
 By default the script only reports -- it writes completionator_report.csv in
 the current directory and changes nothing. Add flags to write:
 
-    --add-missing      create Games rows for checklist entries with no match
-    --set-prices KIND  fill Market price from the checklist (complete / loose /
-                       new); only games with no price unless --overwrite-prices
-    --set-links        fill "Completionator URL" (if that field exists)
+    --add-missing       create Games rows for checklist entries with no match
+    --set-prices KIND   fill Market price (complete / loose / new); only
+                        games with no price unless --overwrite-prices
+    --set-links         fill Completionator URL
+    --set-covers        fill Cover URL from Completionator's box art; only
+                        games with no cover unless --overwrite-covers
 
 Titles that look close but aren't exact (e.g. punctuation differences) are
 reported as possible_match and are never auto-added, so they don't become
 duplicates. Rename them in Baserow to match, then re-run.
 
 Usage (run on the VM, where .env has the real Baserow token):
-    cd backend && ./.venv/bin/python ../scripts/import_completionator.py ~/checklist/*.htm \\
-        [--platform "OG Xbox"] [--add-missing] [--set-prices complete] [--set-links]
+    cd backend && ./.venv/bin/python ../scripts/import_completionator.py \\
+        [--add-missing] [--set-prices complete] [--set-links] [--set-covers]
 """
 import argparse
 import asyncio
@@ -39,6 +48,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
+import httpx
 from bs4 import BeautifulSoup
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -49,6 +59,11 @@ from app.baserow import field_ids as f  # noqa: E402
 REPORT_PATH = "completionator_report.csv"
 POSSIBLE_MATCH_THRESHOLD = 0.85
 BATCH_SIZE = 100
+
+BASE_URL = "https://www.completionator.com"
+SEARCH_URL = f"{BASE_URL}/CollectionChecklist/SearchPager"
+CHECKLIST_ID = "27"  # Microsoft Xbox (NTSC-U/C) -- the only platform checklist Completionator has so far
+USER_AGENT = "video-game-tracker-completionator-import/1.0 (personal hobby project; contact pandallax@pandallax.com)"
 
 
 @dataclass(frozen=True)
@@ -62,6 +77,7 @@ class Entry:
     release_type: str
     release_date: str
     url: str
+    cover_url: str
 
     @property
     def baserow_title(self) -> str:
@@ -73,44 +89,61 @@ def parse_price(text: str) -> float | None:
     return float(match.group().replace(",", "")) if match else None
 
 
-def parse_checklist(html: str) -> list[Entry]:
-    soup = BeautifulSoup(html, "lxml")
-    table = soup.find("table", class_="cgpager-results-container")
-    if table is None:
-        raise ValueError("no checklist table found (is this a saved Completionator checklist page?)")
+def parse_row(row_html: str) -> Entry | None:
+    soup = BeautifulSoup(f"<tr>{row_html}</tr>", "lxml")
+    cells = soup.find_all("td")
+    if len(cells) < 12:
+        return None
+    title = cells[1].get_text(" ", strip=True)
+    if not title:
+        return None
+    link = cells[1].find("a")
+    img = cells[0].find("img")
+    return Entry(
+        title=title,
+        edition=cells[2].get_text(" ", strip=True),
+        genre=cells[3].get_text(" ", strip=True),
+        loose=parse_price(cells[4].get_text(" ", strip=True)),
+        complete=parse_price(cells[5].get_text(" ", strip=True)),
+        new=parse_price(cells[6].get_text(" ", strip=True)),
+        release_type=cells[7].get_text(" ", strip=True),
+        release_date=cells[8].get_text(" ", strip=True),
+        url=BASE_URL + link["href"] if link and link.get("href") else "",
+        cover_url=img["src"] if img and img.get("src") else "",
+    )
 
-    header = [th.get("id", "") for th in table.find("tr").find_all("th")]
-    col = {name: i for i, name in enumerate(header)}
-    required = ["srtGameName", "srtEdition", "srtCompletePrice"]
-    if any(name not in col for name in required):
-        raise ValueError(f"unexpected checklist columns: {header}")
 
-    def cell(cells, name: str) -> str:
-        i = col.get(name)
-        return cells[i].get_text(" ", strip=True) if i is not None and i < len(cells) else ""
+def parse_rows(row_htmls: list[str]) -> list[Entry]:
+    return [e for html in row_htmls if (e := parse_row(html)) is not None]
 
-    entries = []
-    for row in table.find_all("tr")[1:]:
-        cells = row.find_all("td")
-        if len(cells) < len(header):
-            continue
-        link = cells[col["srtGameName"]].find("a")
-        title = cell(cells, "srtGameName")
-        if not title:
-            continue
-        entries.append(
-            Entry(
-                title=title,
-                edition=cell(cells, "srtEdition"),
-                genre=cell(cells, "srtGenre"),
-                loose=parse_price(cell(cells, "srtLoosePrice")),
-                complete=parse_price(cell(cells, "srtCompletePrice")),
-                new=parse_price(cell(cells, "srtNewPrice")),
-                release_type=cell(cells, "srtReleaseTypeName"),
-                release_date=cell(cells, "srtReleaseDate"),
-                url=link["href"] if link and link.get("href") else "",
-            )
-        )
+
+def fetch_checklist(client: httpx.Client) -> list[Entry]:
+    resp = client.post(
+        SEARCH_URL,
+        json={
+            "pageSize": 2000,
+            "currentPage": 1,
+            "checklistID": CHECKLIST_ID,
+            "keyword": "",
+            "releaseTypeID": None,
+            "isInCollection": None,
+            "isOnWishList": None,
+            "hasEdition": None,
+            "exclusiveTypeID": "0",
+            "isOnPlaylist": None,
+            "hasCompletion": None,
+            "genreIDs": None,
+            "sortColumn": "ChecklistSortName",
+            "sortDirection": "ASC",
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+
+    entries = parse_rows(data["results"])
+    if len(entries) != data["totalCount"]:
+        print(f"WARNING: fetched {len(entries)} rows but server reports {data['totalCount']} total", file=sys.stderr)
     return entries
 
 
@@ -166,18 +199,18 @@ def compare(entries: list[Entry], games: list[tuple[int, str]]) -> Comparison:
 
 def write_report(comparison: Comparison, titles_by_id: dict[int, str]) -> None:
     def price_cols(e: Entry):
-        return [e.loose, e.complete, e.new, e.url]
+        return [e.loose, e.complete, e.new, e.url, e.cover_url]
 
     with open(REPORT_PATH, "w", newline="") as fh:
         w = csv.writer(fh)
         w.writerow(["status", "checklist_title", "edition", "baserow_row_id", "baserow_title", "score",
-                    "loose", "complete", "new", "completionator_url"])
+                    "loose", "complete", "new", "completionator_url", "cover_url"])
         for e in comparison.missing:
             w.writerow(["missing_in_baserow", e.title, e.edition, "", "", ""] + price_cols(e))
         for e, row_id, title, score in comparison.possible:
             w.writerow(["possible_match", e.title, e.edition, row_id, title, f"{score:.2f}"] + price_cols(e))
         for row_id, title in comparison.only_in_baserow:
-            w.writerow(["only_in_baserow", "", "", row_id, title, "", "", "", "", ""])
+            w.writerow(["only_in_baserow", "", "", row_id, title, "", "", "", "", "", ""])
         for e, row_id in comparison.matched:
             w.writerow(["matched", e.title, e.edition, row_id, titles_by_id[row_id], "1.00"] + price_cols(e))
 
@@ -191,44 +224,47 @@ async def optional_field(client, name: str) -> str | None:
 
 async def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("files", nargs="+", type=Path, help="saved checklist pages (.htm/.html)")
-    parser.add_argument("--platform", default="OG Xbox", choices=list(f.PLATFORM_OPTIONS))
     parser.add_argument("--include-unofficial", action="store_true", help="keep non-'Official Release' rows")
     parser.add_argument("--add-missing", action="store_true")
     parser.add_argument("--set-prices", choices=["complete", "loose", "new"])
     parser.add_argument("--overwrite-prices", action="store_true")
     parser.add_argument("--set-links", action="store_true")
+    parser.add_argument("--set-covers", action="store_true")
+    parser.add_argument("--overwrite-covers", action="store_true")
     args = parser.parse_args()
 
-    entries: list[Entry] = []
+    platform = "OG Xbox"
+
+    with httpx.Client(headers={"User-Agent": USER_AGENT}) as client:
+        page = fetch_checklist(client)
+    print(f"Fetched {len(page)} rows from Completionator")
+
     seen: set[tuple[str, str]] = set()
-    for path in args.files:
-        page = parse_checklist(path.read_text(encoding="utf-8", errors="replace"))
-        print(f"{path.name}: {len(page)} rows")
-        for e in page:
-            if not args.include_unofficial and e.release_type.lower() != "official release":
-                continue
-            key = (normalize(e.title), normalize(e.edition))
-            if key not in seen:
-                seen.add(key)
-                entries.append(e)
+    entries: list[Entry] = []
+    for e in page:
+        if not args.include_unofficial and e.release_type.lower() != "official release":
+            continue
+        key = (normalize(e.title), normalize(e.edition))
+        if key not in seen:
+            seen.add(key)
+            entries.append(e)
     editions = sum(1 for e in entries if e.edition)
     print(f"{len(entries)} checklist entries ({len(entries) - editions} base releases, {editions} editions)")
 
     from app.baserow.client import baserow_client  # noqa: E402 -- needs .env, so imported after arg parsing
 
     rows = await baserow_client.list_rows(f.TABLE_GAMES)
-    platform_rows = [r for r in rows if (r.get(f.G_PLATFORM) or {}).get("value") == args.platform]
+    platform_rows = [r for r in rows if (r.get(f.G_PLATFORM) or {}).get("value") == platform]
     row_by_id = {r["id"]: r for r in platform_rows}
     games = [(r["id"], r.get(f.G_TITLE) or "") for r in platform_rows]
     comparison = compare(entries, games)
     write_report(comparison, dict(games))
 
-    print(f"\n{args.platform}: {len(platform_rows)} games in Baserow")
+    print(f"\n{platform}: {len(platform_rows)} games in Baserow")
     print(f"  matched:            {len(comparison.matched)}")
     print(f"  possible matches:   {len(comparison.possible)}  (close titles -- rename one side, re-run)")
     print(f"  missing in Baserow: {len(comparison.missing)}")
-    print(f"  only in Baserow:    {len(comparison.only_in_baserow)}  (expected until every page is saved)")
+    print(f"  only in Baserow:    {len(comparison.only_in_baserow)}")
     print(f"  -> {REPORT_PATH}")
 
     if args.add_missing and comparison.missing:
@@ -237,7 +273,7 @@ async def main() -> int:
         bases = [e for e in comparison.missing if not e.edition]
         for i in range(0, len(bases), BATCH_SIZE):
             created = await baserow_client.batch_create_rows(f.TABLE_GAMES, [
-                {f.G_TITLE: e.title, f.G_PLATFORM: f.PLATFORM_OPTIONS[args.platform], f.G_TARGET: True}
+                {f.G_TITLE: e.title, f.G_PLATFORM: f.PLATFORM_OPTIONS[platform], f.G_TARGET: True}
                 for e in bases[i : i + BATCH_SIZE]
             ])
             for e, row in zip(bases[i : i + BATCH_SIZE], created):
@@ -250,7 +286,7 @@ async def main() -> int:
             chunk = edition_entries[i : i + BATCH_SIZE]
             items = []
             for e in chunk:
-                item = {f.G_TITLE: e.baserow_title, f.G_PLATFORM: f.PLATFORM_OPTIONS[args.platform], f.G_TARGET: False}
+                item = {f.G_TITLE: e.baserow_title, f.G_PLATFORM: f.PLATFORM_OPTIONS[platform], f.G_TARGET: False}
                 if base_id := base_ids.get(normalize(e.title)):
                     item[f.G_UPGRADE_TO] = [base_id]
                 items.append(item)
@@ -280,12 +316,20 @@ async def main() -> int:
             for e, row_id in comparison.matched:
                 if e.url and not row_by_id[row_id].get(link_field):
                     updates.setdefault(row_id, {})[link_field] = e.url
+    if args.set_covers:
+        cover_field = await optional_field(baserow_client, "Cover URL")
+        if cover_field is None:
+            print('No "Cover URL" field on Games -- skipping covers')
+        else:
+            for e, row_id in comparison.matched:
+                if e.cover_url and (args.overwrite_covers or not row_by_id[row_id].get(cover_field)):
+                    updates.setdefault(row_id, {})[cover_field] = e.cover_url
 
     if updates:
         items = [{"id": row_id, **values} for row_id, values in updates.items()]
         for i in range(0, len(items), BATCH_SIZE):
             await baserow_client.batch_update_rows(f.TABLE_GAMES, items[i : i + BATCH_SIZE])
-        print(f"Updated prices/links on {len(items)} games")
+        print(f"Updated {len(items)} games")
 
     return 0
 
