@@ -707,3 +707,154 @@ button:disabled {
   justify-content: center;
   padding: 1.5rem 0 0.5rem;
 }
+
+/* ---- Dashboard: Completionator import ---- */
+
+.import-panel {
+  background: #171a21;
+  border: 1px solid #262b36;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  max-width: 760px;
+}
+
+.import-panel > p:first-child {
+  margin-top: 0;
+}
+
+.import-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.import-options .checkbox-label {
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.import-sub-option {
+  margin-left: 1.6rem;
+}
+
+.import-hint {
+  font-size: 0.82rem;
+}
+
+.import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.import-summary {
+  margin-top: 1rem;
+  border-top: 1px solid #262b36;
+  padding-top: 0.75rem;
+}
+
+.import-headline {
+  margin: 0 0 0.75rem;
+}
+
+.import-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.import-stats div {
+  background: #0f1115;
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+}
+
+.import-stats dt {
+  font-size: 0.75rem;
+  color: #8a93a3;
+}
+
+.import-stats dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.import-detail {
+  font-size: 0.85rem;
+}
+
+.import-summary details {
+  margin-top: 0.5rem;
+}
+
+.import-summary summary {
+  cursor: pointer;
+  color: #aab2c0;
+}
+
+.import-missing {
+  max-height: 240px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}
+
+/* ---- Phones: sidebar becomes a top bar ---- */
+
+@media (max-width: 700px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.6rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .sidebar h1 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .sidebar nav {
+    order: 3;
+    flex: 1 0 100%;
+    flex-direction: row;
+    gap: 0.25rem;
+    overflow-x: auto;
+  }
+
+  .sidebar nav a {
+    padding: 0.4rem 0.7rem;
+    white-space: nowrap;
+  }
+
+  .logout-btn {
+    margin-left: auto;
+    padding: 0.3rem 0.7rem;
+  }
+
+  .content {
+    padding: 1rem;
+    min-width: 0;
+  }
+
+  .import-panel {
+    padding: 0.85rem;
+  }
+
+  .import-sub-option {
+    margin-left: 1.2rem;
+  }
+}

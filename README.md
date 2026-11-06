@@ -96,19 +96,23 @@ an image link, or edit the field in Baserow) or automatically from
 Completionator (see below). Each game also links to a PriceCharting search
 for that title and console.
 
-`scripts/import_completionator.py` fetches Completionator's checklist
-directly from its public (robots.txt-allowed) API -- no saved pages needed.
-A browser "Save Page As" can't capture this checklist anyway: the table loads
-via an AJAX call after the initial page load, so a saved copy is always
-empty regardless of format. Fetching the same endpoint the page's own JS
-calls also gets accurate box art per specific printing, which a saved page
-couldn't have captured either way. Compares against the Games table and can
-add missing games/editions, fill the Loose/CIB/Sealed prices from the
-checklist's loose/complete/new columns, fill Editions (--set-editions), store
-each game's Completionator link, and fill Cover URL from Completionator's own
-box art (--set-covers). Only covers "OG Xbox" -- Completionator doesn't have
-a 360/One/Series X checklist yet. Only writes a report unless given flags;
-see its docstring.
+**Import from Completionator** (Dashboard panel): fetches Completionator's
+OG Xbox NTSC-U physical checklist directly from its public, robots.txt-allowed
+checklist endpoint (the same call the checklist page makes; a browser "Save
+Page As" can't capture it because the table loads after the page), matches it
+to the Games table by title + edition, and fills Loose / CIB / Sealed prices,
+box art for that exact printing, Editions and Completionator links. By default
+it only fills empty fields; "Replace existing" options overwrite. **Preview**
+shows the counts without writing; **Run import** writes. It runs as a
+background job on the backend (`backend/app/completionator.py`,
+`app/routes/imports.py`), so the page just polls for the result. Checklist
+editions that aren't options on the Editions field are listed so you can add
+them in Baserow and run again. Only covers OG Xbox -- Completionator has no
+360/One/Series X checklist yet.
+
+`scripts/import_completionator.py` is the same import from the command line
+(on the VM: `cd backend && ./.venv/bin/python ../scripts/import_completionator.py --all`);
+it also writes completionator_report.csv. See its docstring for the flags.
 
 Copies can have their own photo (Copies page: click the thumbnail). Uploads
 are resized to at most 1600px and re-encoded as WebP at 85% quality
