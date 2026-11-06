@@ -91,7 +91,7 @@ platform, target, prices, UPC, CIB requirements or cover image URL, then Save
 (or Cancel). Saving sends only what changed, and Price updated is set to
 today only if one of the prices actually changed.
 
-Cover URL can be filled in by hand (Edit the game on the Games page and paste
+Cover URL can be filled in by hand (Edit the game on the Game List page and paste
 an image link, or edit the field in Baserow) or automatically from
 Completionator (see below). Each game also links to a PriceCharting search
 for that title and console.
