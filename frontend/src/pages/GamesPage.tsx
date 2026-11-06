@@ -59,11 +59,6 @@ function GameLinks({ game }: { game: Game }) {
       <a className="ext-link" href={priceChartingUrl(game)} target="_blank" rel="noreferrer">
         PriceCharting ↗
       </a>
-      {game.completionator_url && (
-        <a className="ext-link" href={game.completionator_url} target="_blank" rel="noreferrer">
-          Completionator ↗
-        </a>
-      )}
     </span>
   )
 }

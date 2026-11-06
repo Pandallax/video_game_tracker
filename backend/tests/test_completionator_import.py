@@ -92,7 +92,7 @@ def test_run_import_dry_run_writes_nothing():
                                entries=[entry("Halo"), entry("Fable")]))
     assert fake.updated == [] and fake.created == []
     assert s.matched == 1 and s.missing == ["Fable"] and s.added_games == 1
-    assert s.games_updated == 1 and s.prices_set == 3 and s.covers_set == 1 and s.links_set == 1
+    assert s.games_updated == 1 and s.prices_set == 3 and s.covers_set == 1 and s.links_set == 0  # links off by default
 
 
 def test_run_import_writes_and_adds_missing():
@@ -145,3 +145,58 @@ def test_job_reports_errors(monkeypatch):
 def test_edition_whitespace_collapsed():
     html = '<td></td><td><a href="/Game/Details/1">Halo</a></td><td>Platinum  Hits</td>' + "<td></td>" * 9
     assert parse_row(html).edition == "Platinum Hits"
+
+
+GOAL_CELL = ('<td><a class="font-20" href="/Game/Details/159">Black</a><span class="text-muted"><p class="mb-0">'
+             '<a class="view-goal-templates" data-game-id="159" href="javascript:void(0);"><i></i>'
+             '<span>goals available</span></a></p></span></td>')
+
+
+def test_goals_badge_not_part_of_title():
+    html = "<td></td>" + GOAL_CELL + "<td></td>" * 10
+    e = parse_row(html)
+    assert e.title == "Black"
+    assert e.url == "https://www.completionator.com/Game/Details/159"
+
+
+def test_plan_title_fixes():
+    from app.completionator import plan_title_fixes
+
+    rows = [
+        {"id": 1, f.G_TITLE: "Black"},
+        {"id": 2, f.G_TITLE: "Black goals available"},  # duplicate, no copies -> delete
+        {"id": 3, f.G_TITLE: "BloodRayne goals available"},  # no clean twin -> rename
+        {"id": 4, f.G_TITLE: "Fable"},
+        {"id": 5, f.G_TITLE: "Fable Goals Available", f.G_COPIES: [{"id": 9, "value": "C-1"}]},  # has copies -> keep
+    ]
+    fixes = plan_title_fixes(rows)
+    assert fixes.renames == {3: "BloodRayne"}
+    assert fixes.deletes == [2]
+    assert fixes.kept == ["Fable Goals Available"]
+
+
+class FakeBaserowWithDelete(FakeBaserow):
+    def __init__(self, rows):
+        super().__init__(rows)
+        self.deleted: list[int] = []
+
+    async def batch_delete_rows(self, table_id, ids):
+        self.deleted.extend(ids)
+
+
+def test_run_import_cleans_goal_titles():
+    rows = [
+        {"id": 1, f.G_TITLE: "Black", f.G_PLATFORM: OG},
+        {"id": 2, f.G_TITLE: "Black goals available", f.G_PLATFORM: OG},
+        {"id": 3, f.G_TITLE: "BloodRayne goals available", f.G_PLATFORM: OG},
+    ]
+    preview = FakeBaserowWithDelete(rows)
+    s = asyncio.run(run_import(ImportOptions(dry_run=True), client=preview, entries=[entry("Black"), entry("BloodRayne")]))
+    assert preview.deleted == [] and preview.updated == []
+    assert (s.titles_fixed, s.duplicates_removed, s.matched, s.missing) == (1, 1, 2, [])
+
+    real = FakeBaserowWithDelete(rows)
+    s = asyncio.run(run_import(ImportOptions(dry_run=False), client=real, entries=[entry("Black"), entry("BloodRayne")]))
+    assert real.deleted == [2]
+    assert {"id": 3, f.G_TITLE: "BloodRayne"} in real.updated
+    assert s.matched == 2

@@ -31,6 +31,9 @@ USER_AGENT = "video-game-tracker-completionator-import/1.0 (personal hobby proje
 POSSIBLE_MATCH_THRESHOLD = 0.85
 BATCH_SIZE = 100
 
+# Badge Completionator shows after some titles; never part of the name.
+GOAL_SUFFIX_RE = re.compile(r"\s*goals available\s*$", re.IGNORECASE)
+
 # Checklist column -> field_ids attribute
 PRICE_COLUMNS = {"loose": "G_LOOSE_PRICE", "complete": "G_CIB_PRICE", "new": "G_SEALED_PRICE"}
 
@@ -67,10 +70,13 @@ def parse_row(row_html: str) -> Entry | None:
     cells = soup.find_all("td")
     if len(cells) < 12:
         return None
-    title = " ".join(cells[1].get_text(" ", strip=True).split())
+    # The title cell also holds a "goals available" badge for some games; the
+    # game's name is the text of its first link.
+    link = cells[1].find("a")
+    title = " ".join((link or cells[1]).get_text(" ", strip=True).split())
+    title = GOAL_SUFFIX_RE.sub("", title)
     if not title:
         return None
-    link = cells[1].find("a")
     img = cells[0].find("img")
     return Entry(
         title=title,
@@ -191,7 +197,7 @@ class ImportOptions(BaseModel):
     set_covers: bool = True
     overwrite_covers: bool = False
     set_editions: bool = True
-    set_links: bool = True
+    set_links: bool = False  # links aren't shown in the app any more
     add_missing: bool = False
     include_unofficial: bool = False
 
@@ -220,6 +226,9 @@ class ImportSummary(BaseModel):
     editions_set: int
     links_set: int
     unknown_editions: dict[str, int]  # edition -> games, not an option on Editions yet
+    titles_fixed: int = 0  # "... goals available" titles renamed
+    duplicates_removed: int = 0  # "... goals available" rows that duplicated an existing game
+    duplicates_kept: list[str] = []  # such duplicates left alone because copies link to them
     notes: list[str]
 
 
@@ -313,6 +322,36 @@ def plan_updates(
     return plan
 
 
+@dataclass
+class _TitleFixes:
+    renames: dict[int, str] = field(default_factory=dict)  # row_id -> clean title
+    deletes: list[int] = field(default_factory=list)  # duplicates of an existing game, no copies
+    kept: list[str] = field(default_factory=list)  # duplicates left alone because copies link to them
+
+
+def plan_title_fixes(platform_rows: list[dict]) -> _TitleFixes:
+    """Rows an earlier import created with "goals available" stuck on the
+    title: rename them, or remove them when they duplicate a game that's
+    already there (unless copies point at them)."""
+    fixes = _TitleFixes()
+    clean_titles = {
+        normalize(r.get(f.G_TITLE) or "") for r in platform_rows if not GOAL_SUFFIX_RE.search(r.get(f.G_TITLE) or "")
+    }
+    for r in platform_rows:
+        title = r.get(f.G_TITLE) or ""
+        if not GOAL_SUFFIX_RE.search(title):
+            continue
+        clean = GOAL_SUFFIX_RE.sub("", title).strip()
+        if normalize(clean) not in clean_titles:
+            fixes.renames[r["id"]] = clean
+            clean_titles.add(normalize(clean))
+        elif r.get(f.G_COPIES):
+            fixes.kept.append(title)
+        else:
+            fixes.deletes.append(r["id"])
+    return fixes
+
+
 async def _add_missing(client, missing: list[Entry], games: list[tuple[int, str]], fields: list[dict]):
     """Create Games rows for missing entries; returns [(entry, new_row)]."""
     edition_fld = find_edition_field(fields)
@@ -364,6 +403,20 @@ async def run_import(
     rows = await client.list_rows(f.TABLE_GAMES)
     fields = await client.list_fields(f.TABLE_GAMES)
     platform_rows = [r for r in rows if (r.get(f.G_PLATFORM) or {}).get("value") == PLATFORM]
+
+    # Clean up "... goals available" rows from earlier imports first, so matching sees the fixed titles.
+    fixes = plan_title_fixes(platform_rows)
+    if not options.dry_run:
+        if fixes.renames:
+            items = [{"id": rid, f.G_TITLE: title} for rid, title in fixes.renames.items()]
+            for i in range(0, len(items), BATCH_SIZE):
+                await client.batch_update_rows(f.TABLE_GAMES, items[i : i + BATCH_SIZE])
+        for i in range(0, len(fixes.deletes), BATCH_SIZE):
+            await client.batch_delete_rows(f.TABLE_GAMES, fixes.deletes[i : i + BATCH_SIZE])
+    deleted = set(fixes.deletes)
+    platform_rows = [
+        {**r, f.G_TITLE: fixes.renames.get(r["id"], r.get(f.G_TITLE))} for r in platform_rows if r["id"] not in deleted
+    ]
     row_by_id = {r["id"]: r for r in platform_rows}
     games = [(r["id"], r.get(f.G_TITLE) or "") for r in platform_rows]
     comparison = compare(checklist, games)
@@ -408,5 +461,8 @@ async def run_import(
         editions_set=plan.editions,
         links_set=plan.links,
         unknown_editions=plan.unknown_editions,
+        titles_fixed=len(fixes.renames),
+        duplicates_removed=len(fixes.deletes),
+        duplicates_kept=fixes.kept,
         notes=plan.notes,
     )
