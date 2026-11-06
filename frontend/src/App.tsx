@@ -5,6 +5,7 @@ import { AppLayout } from './components/AppLayout'
 import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { GamesPage } from './pages/GamesPage'
+import { ImportsPage } from './pages/ImportsPage'
 import { CopiesPage } from './pages/CopiesPage'
 import { SalesPage } from './pages/SalesPage'
 
@@ -18,6 +19,7 @@ export default function App() {
             <Route element={<AppLayout />}>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/games" element={<GamesPage />} />
+              <Route path="/games/imports" element={<ImportsPage />} />
               <Route path="/copies" element={<CopiesPage />} />
               <Route path="/sales" element={<SalesPage />} />
             </Route>
