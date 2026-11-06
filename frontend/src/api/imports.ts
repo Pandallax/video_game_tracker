@@ -30,6 +30,12 @@ export interface ImportSummary {
   editions_set: number
   links_set: number
   unknown_editions: Record<string, number>
+  /** "… goals available" titles from an earlier import, renamed. */
+  titles_fixed: number
+  /** "… goals available" rows that duplicated an existing game, removed. */
+  duplicates_removed: number
+  /** Such duplicates left alone because copies are linked to them. */
+  duplicates_kept: string[]
   notes: string[]
 }
 

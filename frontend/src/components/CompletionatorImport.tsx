@@ -11,7 +11,7 @@ const DEFAULT_CHOICE: Choice = {
   set_covers: true,
   overwrite_covers: false,
   set_editions: true,
-  set_links: true,
+  set_links: false,
   add_missing: false,
 }
 
@@ -21,7 +21,6 @@ const OPTION_LABELS: { key: keyof Choice; label: string; hint: string; requires?
   { key: 'set_covers', label: 'Box art', hint: 'Cover image for that exact printing' },
   { key: 'overwrite_covers', label: 'Replace existing covers', hint: 'Otherwise covers you set are kept', requires: 'set_covers' },
   { key: 'set_editions', label: 'Editions', hint: 'e.g. Platinum Hits (blank editions only)' },
-  { key: 'set_links', label: 'Completionator links', hint: 'Link to each game on Completionator' },
   { key: 'add_missing', label: 'Add missing games', hint: 'Create games that are on the checklist but not here' },
 ]
 
@@ -57,10 +56,6 @@ function Summary({ job }: { job: ImportJob }) {
           <dd>{s.editions_set}</dd>
         </div>
         <div>
-          <dt>Links</dt>
-          <dd>{s.links_set}</dd>
-        </div>
-        <div>
           <dt>Matched</dt>
           <dd>
             {s.matched} / {s.checklist_entries}
@@ -71,6 +66,24 @@ function Summary({ job }: { job: ImportJob }) {
         Checklist: {s.checklist_entries} games ({s.fetched} rows from Completionator). Your OG Xbox catalog:{' '}
         {s.baserow_games} games, {s.only_in_baserow} not on the checklist.
       </p>
+      {(s.titles_fixed > 0 || s.duplicates_removed > 0) && (
+        <p className="import-cleanup">
+          Cleanup: {s.dry_run ? 'would fix' : 'fixed'} {s.titles_fixed} title{s.titles_fixed === 1 ? '' : 's'} ending in
+          “goals available” and {s.dry_run ? 'would remove' : 'removed'} {s.duplicates_removed} duplicate
+          {s.duplicates_removed === 1 ? '' : 's'} an earlier import created.
+        </p>
+      )}
+      {s.duplicates_kept.length > 0 && (
+        <details>
+          <summary>{s.duplicates_kept.length} duplicate(s) kept because copies are linked to them</summary>
+          <p className="muted">Move those copies to the original game, then delete these rows:</p>
+          <ul>
+            {s.duplicates_kept.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        </details>
+      )}
       {unknown.length > 0 && (
         <details>
           <summary>
@@ -177,7 +190,7 @@ export function CompletionatorImport() {
   return (
     <section className="import-panel">
       <p className="muted">
-        Pulls prices, box art, editions and links for OG Xbox games from Completionator&apos;s NTSC-U physical
+        Pulls prices, box art and editions for OG Xbox games from Completionator&apos;s NTSC-U physical
         checklist. Preview shows what would change without touching your data.
       </p>
       <div className="import-options">

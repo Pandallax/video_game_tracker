@@ -93,7 +93,7 @@ today only if one of the prices actually changed.
 
 Cover URL can be filled in by hand (Edit the game on the Game List page and paste
 an image link, or edit the field in Baserow) or automatically from
-Completionator (see below). Each game also links to a PriceCharting search
+Completionator (see below). Each game links to a PriceCharting search
 for that title and console.
 
 **Import from Completionator** (Game List → Imports page, `/games/imports`): fetches Completionator's
@@ -101,7 +101,10 @@ OG Xbox NTSC-U physical checklist directly from its public, robots.txt-allowed
 checklist endpoint (the same call the checklist page makes; a browser "Save
 Page As" can't capture it because the table loads after the page), matches it
 to the Games table by title + edition, and fills Loose / CIB / Sealed prices,
-box art for that exact printing, Editions and Completionator links. By default
+box art for that exact printing and Editions. Titles are read from the game
+link only (Completionator shows a "goals available" badge beside some names);
+rows an earlier import created with that suffix are renamed, or removed when
+they duplicate an existing game and have no copies. By default
 it only fills empty fields; "Replace existing" options overwrite. **Preview**
 shows the counts without writing; **Run import** writes. It runs as a
 background job on the backend (`backend/app/completionator.py`,

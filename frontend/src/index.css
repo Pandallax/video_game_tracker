@@ -891,3 +891,8 @@ button:disabled {
     color: #5c6573;
   }
 }
+
+.import-cleanup {
+  font-size: 0.9rem;
+  color: #c9d0d8;
+}

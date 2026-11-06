@@ -22,6 +22,7 @@ G_CIB_REQUIRES = "field_14864"
 G_UPC = "field_14872"
 G_COVER_URL = "field_14873"  # "Cover URL" (URL)
 G_PRICE_UPDATED = "field_14874"  # "Price updated" (Date, no time) -- set whenever any price changes
+G_COPIES = "field_14848"  # "Copies" (link to Copies) -- reverse side of C_GAME
 G_COMPLETIONATOR_URL = "field_14875"  # "Completionator URL" (URL) -- filled by scripts/import_completionator.py
 
 PLATFORM_OPTIONS = {
