@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 interface NavItem {
@@ -17,6 +17,9 @@ const navItems: NavItem[] = [
 
 export function AppLayout() {
   const { logout } = useAuth()
+  const { pathname } = useLocation()
+  // A section's sub-pages (e.g. Game List → Imports) only show while you're in that section.
+  const inSection = (to: string) => to !== '/' && (pathname === to || pathname.startsWith(`${to}/`))
 
   return (
     <div className="app-shell">
@@ -28,16 +31,17 @@ export function AppLayout() {
               <NavLink to={item.to} className={({ isActive }) => (isActive ? 'active' : '')} end>
                 {item.label}
               </NavLink>
-              {item.children?.map((child) => (
-                <NavLink
-                  key={child.to}
-                  to={child.to}
-                  className={({ isActive }) => `sub-link${isActive ? ' active' : ''}`}
-                  end
-                >
-                  {child.label}
-                </NavLink>
-              ))}
+              {inSection(item.to) &&
+                item.children?.map((child) => (
+                  <NavLink
+                    key={child.to}
+                    to={child.to}
+                    className={({ isActive }) => `sub-link${isActive ? ' active' : ''}`}
+                    end
+                  >
+                    {child.label}
+                  </NavLink>
+                ))}
             </Fragment>
           ))}
         </nav>
