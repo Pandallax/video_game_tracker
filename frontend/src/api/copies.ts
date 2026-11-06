@@ -25,11 +25,19 @@ export interface Copy {
   notes: string
   /** Your own photo of this copy (WebP), if uploaded. */
   photo_url: string | null
+  /** The linked game's platform. */
+  platform: string | null
+  /** No purchase price recorded yet. */
+  needs_price: boolean
+  /** Not sealed, and no parts marked or a part with no quality yet. */
+  needs_condition: boolean
 }
 
 export interface CopyCreate {
-  copy_id: string
+  /** Blank = next number in your Copy ID series. */
+  copy_id?: string
   game_id: number
+  /** Omit for the default: Collection for a first copy, For Sale for duplicates. */
   status?: CopyStatus
   sealed?: boolean
   has_disc?: boolean
@@ -45,6 +53,7 @@ export interface CopyCreate {
   notes?: string
 }
 
+/** Fields sent as null are cleared; unchecking a part clears its quality. */
 export interface CopyUpdate {
   status?: CopyStatus
   sealed?: boolean
@@ -60,6 +69,12 @@ export interface CopyUpdate {
   location?: string
   notes?: string
 }
+
+export const CIB_PARTS = [
+  { has: 'has_disc', quality: 'disc_quality', label: 'Disc' },
+  { has: 'has_case', quality: 'case_quality', label: 'Case' },
+  { has: 'has_manual', quality: 'manual_quality', label: 'Manual' },
+] as const
 
 export const listCopies = (params?: { status?: string; game_id?: number }) => {
   const query = new URLSearchParams()

@@ -132,12 +132,18 @@ class CopyOut(BaseModel):
     location: str
     notes: str
     photo_url: str | None
+    platform: str | None = None  # the linked game's platform
+    # Still to fill in (shown on the Dashboard).
+    needs_price: bool = False
+    needs_condition: bool = False
 
 
 class CopyCreate(BaseModel):
-    copy_id: str
+    # Blank = next number in your existing Copy ID series (e.g. C-0042).
+    copy_id: str = ""
     game_id: int
-    status: str = "Collection"
+    # None = Collection for the first copy of a game, For Sale for duplicates.
+    status: str | None = None
     sealed: bool = False
     has_disc: bool = False
     disc_quality: int | None = Field(default=None, ge=1, le=10)
@@ -275,7 +281,19 @@ def _overall_quality(
     return round(sum(scores) / len(scores), 1)
 
 
-def copy_row_to_out(row: dict, game_cib_requires: list[str] | None = None) -> CopyOut:
+def needs_condition(
+    sealed: bool,
+    parts: tuple[tuple[bool, int | None], ...],
+) -> bool:
+    """A copy's condition is unrecorded if it isn't sealed and either no parts
+    are marked or a part it has has no quality yet."""
+    if sealed:
+        return False
+    present = [q for has, q in parts if has]
+    return not present or any(q is None for q in present)
+
+
+def copy_row_to_out(row: dict, game_cib_requires: list[str] | None = None, platform: str | None = None) -> CopyOut:
     status = row.get(f.C_STATUS)
     game = row.get(f.C_GAME) or []
     sealed = bool(row.get(f.C_SEALED))
@@ -309,6 +327,11 @@ def copy_row_to_out(row: dict, game_cib_requires: list[str] | None = None) -> Co
         location=row.get(f.C_LOCATION) or "",
         notes=row.get(f.C_NOTES) or "",
         photo_url=_first_file_url(row.get(f.C_PHOTO)) if f.C_PHOTO else None,
+        platform=platform,
+        needs_price=row.get(f.C_PURCHASE_PRICE) in (None, ""),
+        needs_condition=needs_condition(
+            sealed, ((has_disc, disc_quality), (has_case, case_quality), (has_manual, manual_quality))
+        ),
     )
 
 

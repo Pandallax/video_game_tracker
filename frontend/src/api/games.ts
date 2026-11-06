@@ -111,7 +111,9 @@ export const editionClass = (edition: string) => {
   return /platinum/i.test(edition) ? 'edition-platinum' : 'edition-other'
 }
 
-export const createGame =(body: GameCreate) => api.post<Game>('/games', body)
+export const getGame = (id: number) => api.get<Game>(`/games/${id}`)
+
+export const createGame = (body: GameCreate) => api.post<Game>('/games', body)
 
 export const updateGame = (id: number, body: GameUpdate) => api.patch<Game>(`/games/${id}`, body)
 

@@ -146,6 +146,14 @@ async def get_game_by_upc(upc: str):
     raise HTTPException(status_code=404, detail="No game found for that UPC")
 
 
+@router.get("/{game_id}", response_model=GameOut)
+async def get_game(game_id: int):
+    row = await baserow_client.get_row(f.TABLE_GAMES, game_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Game not found")
+    return game_row_to_out(row, await _edition_key())
+
+
 @router.post("", response_model=GameOut, status_code=201)
 async def create_game(body: GameCreate):
     if body.platform not in f.PLATFORM_OPTIONS:
