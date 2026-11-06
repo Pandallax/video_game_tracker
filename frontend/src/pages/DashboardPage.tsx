@@ -5,7 +5,6 @@ import { getGameByUpc, listGames, type Game } from '../api/games'
 import { listCopies, type Copy } from '../api/copies'
 import { UpcScanner } from '../components/UpcScanner'
 import { Cover } from '../components/Cover'
-import { CompletionatorImport } from '../components/CompletionatorImport'
 
 const RECENT_COUNT = 18
 
@@ -150,9 +149,6 @@ export function DashboardPage() {
           <button onClick={() => setScanning(true)}>Scan again</button>
         </div>
       )}
-
-      <h2 className="section-heading">Import from Completionator</h2>
-      <CompletionatorImport />
     </div>
   )
 }

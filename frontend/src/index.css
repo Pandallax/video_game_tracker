@@ -831,8 +831,8 @@ button:disabled {
     order: 3;
     flex: 1 0 100%;
     flex-direction: row;
+    flex-wrap: wrap;
     gap: 0.25rem;
-    overflow-x: auto;
   }
 
   .sidebar nav a {
@@ -856,5 +856,38 @@ button:disabled {
 
   .import-sub-option {
     margin-left: 1.2rem;
+  }
+}
+
+/* ---- Nav: sub-pages (e.g. Game List → Imports) ---- */
+
+.sidebar nav a.sub-link {
+  margin-left: 1rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+  border-left: 2px solid #262b36;
+  border-radius: 0 6px 6px 0;
+}
+
+.sidebar nav a.sub-link.active {
+  border-left-color: #3b6fd4;
+}
+
+.import-source-heading {
+  margin: 0.5rem 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+@media (max-width: 700px) {
+  .sidebar nav a.sub-link {
+    margin-left: 0;
+    border-left: none;
+    border-radius: 6px;
+    font-size: inherit;
+  }
+
+  .sidebar nav a.sub-link::before {
+    content: '› ';
+    color: #5c6573;
   }
 }

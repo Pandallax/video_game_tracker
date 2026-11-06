@@ -559,7 +559,7 @@ export function GamesPage() {
 
   return (
     <div>
-      <h2>Game Catalog</h2>
+      <h2>Game List</h2>
 
       <form className="inline-form" onSubmit={handleAdd}>
         <input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />

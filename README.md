@@ -76,27 +76,27 @@ other editions get a purple one. This is a label on the row, separate from
 the long-standing convention of giving an edition its own "Title (Edition)"
 row with `Upgrade to` pointing at the base release -- both are used together.
 
-The Games page loads 48 games at a time (sorted by title, via
+The Game List page loads 48 games at a time (sorted by title, via
 `GET /api/games/page`) and fetches more as you scroll, so it opens quickly
 however big the catalog gets. The search box filters on the server: text
 matches titles, 4+ digits match UPCs. Pages that still need every game
 (Copies, Dashboard) fetch Baserow's pages in parallel.
 
-The Games page has a Table / Cards toggle (remembered per browser). Cards show
+The Game List page has a Table / Cards toggle (remembered per browser). Cards show
 large cover art, title, platform, edition, the CIB price up front and the
 other prices underneath.
 
-Games page rows are read-only; click Edit on a row to change its title,
+Game List rows are read-only; click Edit on a row to change its title,
 platform, target, prices, UPC, CIB requirements or cover image URL, then Save
 (or Cancel). Saving sends only what changed, and Price updated is set to
 today only if one of the prices actually changed.
 
-Cover URL can be filled in by hand (Edit the game on the Games page and paste
+Cover URL can be filled in by hand (Edit the game on the Game List page and paste
 an image link, or edit the field in Baserow) or automatically from
 Completionator (see below). Each game also links to a PriceCharting search
 for that title and console.
 
-**Import from Completionator** (Dashboard panel): fetches Completionator's
+**Import from Completionator** (Game List → Imports page, `/games/imports`): fetches Completionator's
 OG Xbox NTSC-U physical checklist directly from its public, robots.txt-allowed
 checklist endpoint (the same call the checklist page makes; a browser "Save
 Page As" can't capture it because the table loads after the page), matches it
