@@ -896,3 +896,353 @@ button:disabled {
   font-size: 0.9rem;
   color: #c9d0d8;
 }
+
+/* ---- Copies: add panel ---- */
+
+.add-copy-panel {
+  background: #171a21;
+  border: 1px solid #262b36;
+  border-radius: 10px;
+  padding: 1rem 1.25rem 1.25rem;
+  margin-bottom: 1.5rem;
+  max-width: 860px;
+}
+
+.add-copy-panel h3 {
+  margin: 0 0 0.75rem;
+}
+
+.picker-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.step-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a93a3;
+}
+
+.platform-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.platform-buttons button {
+  background: #0f1115;
+  border: 1px solid #333;
+  color: #c9d0d8;
+}
+
+.platform-buttons button.active {
+  background: #3b6fd4;
+  border-color: #3b6fd4;
+  color: #fff;
+}
+
+.game-search {
+  max-width: 520px;
+}
+
+.game-results {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.game-results li + li {
+  border-top: 1px solid #1f232c;
+}
+
+.game-result {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  text-align: left;
+  background: #0f1115;
+  color: #e6e8eb;
+  border-radius: 0;
+  padding: 0.4rem 0.6rem;
+}
+
+.game-result.highlighted {
+  background: #232a38;
+}
+
+.game-result-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-hint {
+  font-size: 0.82rem;
+  margin: 0.25rem 0 0;
+}
+
+.picked-game {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #0f1115;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  max-width: 520px;
+}
+
+.picked-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.picked-game.edition-platinum {
+  border-color: #c9d0d8;
+}
+
+.picked-game.edition-other {
+  border-color: #7d5cd6;
+}
+
+.picked-title {
+  font-weight: 600;
+}
+
+.picked-meta {
+  font-size: 0.82rem;
+}
+
+.owned-note {
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.copy-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.copy-fieldset {
+  border: 1px solid #262b36;
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem 0.85rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.copy-fieldset legend {
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  color: #aab2c0;
+}
+
+.sealed-toggle {
+  margin-bottom: 0.5rem;
+}
+
+.parts-grid {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.part-row {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 16rem);
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.part-row select {
+  background: #0f1115;
+  border: 1px solid #333;
+  color: #e6e8eb;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+}
+
+.part-row select:disabled {
+  opacity: 0.4;
+}
+
+.purchase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.add-meta {
+  margin-top: 0.75rem;
+}
+
+.add-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.add-success {
+  margin: 0;
+  color: #8fd19e;
+}
+
+.link-button.inline {
+  background: none;
+  border: none;
+  color: #6f9cf0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.needs-pill {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.72rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: #4a3410;
+  color: #f3c66b;
+  white-space: nowrap;
+}
+
+.cell-sub {
+  font-size: 0.78rem;
+}
+
+/* ---- Dialog ---- */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 10, 0.7);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3vh 1rem;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.dialog {
+  background: #171a21;
+  border: 1px solid #2c3240;
+  border-radius: 12px;
+  padding: 1rem 1.25rem 1.25rem;
+  width: 100%;
+  max-width: 620px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.dialog h3 {
+  margin: 0 0 0.75rem;
+}
+
+.status-field {
+  max-width: 220px;
+  margin-bottom: 0.75rem;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* ---- Dashboard: needs attention ---- */
+
+.attention-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.attention-card {
+  background: #171a21;
+  border: 1px solid #262b36;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+
+.attention-card h3 {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.attention-count {
+  font-size: 0.8rem;
+  background: #4a3410;
+  color: #f3c66b;
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+}
+
+.attention-list {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+}
+
+.attention-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.4rem 0.35rem;
+  border-radius: 6px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.attention-item:hover {
+  background: #1f2430;
+}
+
+.attention-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.attention-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attention-sub {
+  font-size: 0.78rem;
+}
+
+.attention-action {
+  font-size: 0.82rem;
+  color: #6f9cf0;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .part-row {
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+  }
+
+  .add-copy-panel {
+    padding: 0.85rem;
+  }
+}
+
+.copy-id-cell {
+  white-space: nowrap;
+}

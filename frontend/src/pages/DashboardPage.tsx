@@ -5,6 +5,7 @@ import { getGameByUpc, listGames, type Game } from '../api/games'
 import { listCopies, type Copy } from '../api/copies'
 import { UpcScanner } from '../components/UpcScanner'
 import { Cover } from '../components/Cover'
+import { NeedsAttention } from '../components/NeedsAttention'
 
 const RECENT_COUNT = 18
 
@@ -13,6 +14,7 @@ type ScanResult = { game: Game; copies: Copy[] } | { notFoundUpc: string } | nul
 export function DashboardPage() {
   const [stats, setStats] = useState<PlatformStats[]>([])
   const [recent, setRecent] = useState<Copy[]>([])
+  const [allCopies, setAllCopies] = useState<Copy[]>([])
   const [gamesById, setGamesById] = useState<Map<number, Game>>(new Map())
   const [loading, setLoading] = useState(true)
   const [scanning, setScanning] = useState(false)
@@ -20,11 +22,17 @@ export function DashboardPage() {
   const [looking, setLooking] = useState(false)
 
   useEffect(() => {
-    Promise.all([getCompletion(), listCopies({ status: 'Collection' }), listGames()])
+    Promise.all([getCompletion(), listCopies(), listGames()])
       .then(([completion, copies, games]) => {
         setStats(completion)
+        setAllCopies(copies)
         // Baserow row ids are increasing, so highest id = most recently added.
-        setRecent([...copies].sort((a, b) => b.id - a.id).slice(0, RECENT_COUNT))
+        setRecent(
+          copies
+            .filter((c) => c.status === 'Collection')
+            .sort((a, b) => b.id - a.id)
+            .slice(0, RECENT_COUNT),
+        )
         setGamesById(new Map(games.map((g) => [g.id, g])))
       })
       .finally(() => setLoading(false))
@@ -69,6 +77,13 @@ export function DashboardPage() {
             )
           })}
         </div>
+      )}
+
+      {!loading && (
+        <>
+          <h2 className="section-heading">Needs attention</h2>
+          <NeedsAttention copies={allCopies} gamesById={gamesById} />
+        </>
       )}
 
       <h2 className="section-heading">Recently added to collection</h2>

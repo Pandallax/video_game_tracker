@@ -53,7 +53,15 @@ cd backend
   Box", "Disc + Case", etc.) and overall quality are computed from the
   components present, checked against the linked game's CIB Requires -- not
   stored directly. First copy of a title goes to Collection; duplicates go
-  For Sale.
+  For Sale (the app picks this automatically unless you choose).
+
+Adding a copy (Copies page): pick the platform, type to find the game on that
+platform, then record what you have (sealed, or disc / case / manual each
+with an optional 1-10 quality) and the purchase details. Copy ID is the next
+number in your existing series unless you type one. Price and quality can be
+left blank: the Dashboard's "Needs attention" lists copies with no purchase
+price, and (unsold) copies with no parts recorded or a part not yet graded;
+each links straight to that copy's editor (Edit on the Copies page).
 - **Sales** (table 1376): Sale ID, Copy (link), Sold on, Sale date, Sale
   price, Fees, Shipping cost, Net (formula).
 
