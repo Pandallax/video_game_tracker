@@ -38,8 +38,10 @@ cd backend
 ## Data model (Baserow database "Game Tracker", id 339)
 
 - **Games** (table 1374): Title, Platform, Target, Upgrade to (self-link),
-  Market price, Price updated (date, stamped by the app whenever Market price
-  changes), CIB Requires (Disc/Case/Manual -- which components count as
+  per-condition prices -- Loose Price (disc only), CIB Price (complete in
+  box), Sealed Price, Box Only Price, Manual Only Price --
+  Price updated (date, stamped by the app when a saved edit changes any
+  price -- edits made directly in Baserow don't update it), CIB Requires (Disc/Case/Manual -- which components count as
   "Complete In Box" for this title), UPC, Cover URL, Completionator URL,
   Notes. Platinum Hits / other editions get their own row with `Upgrade to`
   pointing at the base edition; `Target` is off unless that specific printing
@@ -55,6 +57,11 @@ cd backend
 - **Sales** (table 1376): Sale ID, Copy (link), Sold on, Sale date, Sale
   price, Fees, Shipping cost, Net (formula).
 
+CIB Price was originally the single "Market price" field (same field id).
+The Copies page shows an estimated value per copy: the Sealed or CIB
+price when it is sealed or complete, otherwise the loose + box-only +
+manual-only prices for the parts it has, capped at CIB.
+
 Completion stats only count `Collection` copies of `Target`-flagged games.
 
 The Dashboard has a "Scan UPC" button that opens the phone camera
@@ -62,19 +69,46 @@ The Dashboard has a "Scan UPC" button that opens the phone camera
 adding a copy. Camera access needs a secure context, which is why the VM
 serves `:8081` over TLS (see Deploy below).
 
-Cover URL can be filled in by hand (click a game's thumbnail on the Games
-page and paste an image link, or edit the field in Baserow) or automatically
-from Completionator (see below). Each game also links to a PriceCharting
-search for that title and console.
+Games has an "Editions" field (single select, found by name, so options can
+be added in Baserow at any time): blank is the normal release, otherwise e.g.
+"Platinum Hits". Platinum Hits games get a silver/platinum card and badge;
+other editions get a purple one. This is a label on the row, separate from
+the long-standing convention of giving an edition its own "Title (Edition)"
+row with `Upgrade to` pointing at the base release -- both are used together.
+
+The Games page loads 48 games at a time (sorted by title, via
+`GET /api/games/page`) and fetches more as you scroll, so it opens quickly
+however big the catalog gets. The search box filters on the server: text
+matches titles, 4+ digits match UPCs. Pages that still need every game
+(Copies, Dashboard) fetch Baserow's pages in parallel.
+
+The Games page has a Table / Cards toggle (remembered per browser). Cards show
+large cover art, title, platform, edition, the CIB price up front and the
+other prices underneath.
+
+Games page rows are read-only; click Edit on a row to change its title,
+platform, target, prices, UPC, CIB requirements or cover image URL, then Save
+(or Cancel). Saving sends only what changed, and Price updated is set to
+today only if one of the prices actually changed.
+
+Cover URL can be filled in by hand (Edit the game on the Games page and paste
+an image link, or edit the field in Baserow) or automatically from
+Completionator (see below). Each game also links to a PriceCharting search
+for that title and console.
 
 `scripts/import_completionator.py` fetches Completionator's checklist
-directly from its public (robots.txt-allowed) API -- no saved pages needed,
-and this also gets accurate box art per specific printing, which a saved
-page can't capture. Compares against the Games table and can add missing
-games/editions, fill Market price from loose/complete/new prices, store each
-game's Completionator link, and fill Cover URL from Completionator's own box
-art. Only covers "OG Xbox" -- Completionator doesn't have a 360/One/Series X
-checklist yet. Only writes a report unless given flags; see its docstring.
+directly from its public (robots.txt-allowed) API -- no saved pages needed.
+A browser "Save Page As" can't capture this checklist anyway: the table loads
+via an AJAX call after the initial page load, so a saved copy is always
+empty regardless of format. Fetching the same endpoint the page's own JS
+calls also gets accurate box art per specific printing, which a saved page
+couldn't have captured either way. Compares against the Games table and can
+add missing games/editions, fill the Loose/CIB/Sealed prices from the
+checklist's loose/complete/new columns, fill Editions (--set-editions), store
+each game's Completionator link, and fill Cover URL from Completionator's own
+box art (--set-covers). Only covers "OG Xbox" -- Completionator doesn't have
+a 360/One/Series X checklist yet. Only writes a report unless given flags;
+see its docstring.
 
 Copies can have their own photo (Copies page: click the thumbnail). Uploads
 are resized to at most 1600px and re-encoded as WebP at 85% quality

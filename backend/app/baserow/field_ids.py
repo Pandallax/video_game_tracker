@@ -10,12 +10,18 @@ G_TITLE = "field_14833"
 G_PLATFORM = "field_14842"
 G_TARGET = "field_14843"
 G_UPGRADE_TO = "field_14844"
-G_MARKET_PRICE = "field_14845"
+# Per-condition prices (Number, 2 decimals). "CIB Price" was originally named
+# "Market price".
+G_CIB_PRICE = "field_14845"  # "CIB Price" -- complete in box
+G_LOOSE_PRICE = "field_14877"  # "Loose Price" -- disc only
+G_BOX_ONLY_PRICE = "field_14878"  # "Box Only Price" -- case + artwork, no disc
+G_SEALED_PRICE = "field_14879"  # "Sealed Price" -- new / factory sealed
+G_MANUAL_ONLY_PRICE = "field_14880"  # "Manual Only Price"
 G_NOTES = "field_14846"
 G_CIB_REQUIRES = "field_14864"
 G_UPC = "field_14872"
 G_COVER_URL = "field_14873"  # "Cover URL" (URL)
-G_PRICE_UPDATED = "field_14874"  # "Price updated" (Date, no time) -- set whenever Market price changes
+G_PRICE_UPDATED = "field_14874"  # "Price updated" (Date, no time) -- set whenever any price changes
 G_COMPLETIONATOR_URL = "field_14875"  # "Completionator URL" (URL) -- filled by scripts/import_completionator.py
 
 PLATFORM_OPTIONS = {
