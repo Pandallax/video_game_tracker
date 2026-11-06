@@ -36,7 +36,7 @@ def test_parse_rows():
     halo, halo_ph = entries[0], entries[1]
     assert (halo.loose, halo.complete, halo.new) == (5.0, 9.5, 1050.0)
     assert halo.url == "https://www.completionator.com/Game/Details/1"
-    assert halo.cover_url == "x.jpg"
+    assert halo.cover_url == "https://www.completionator.com/x.jpg"
     assert halo_ph.edition == "Platinum Hits"
     assert halo_ph.complete is None
     assert halo_ph.cover_url == ""
