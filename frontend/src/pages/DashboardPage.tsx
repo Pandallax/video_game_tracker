@@ -139,7 +139,7 @@ export function DashboardPage() {
           {scanResult.copies.length === 0 ? (
             <>
               <p>You don't own a copy of this yet.</p>
-              <Link to={`/copies?game=${scanResult.game.id}`}>
+              <Link to={`/collection/copies?game=${scanResult.game.id}`}>
                 <button>Add a copy</button>
               </Link>
             </>
@@ -156,7 +156,7 @@ export function DashboardPage() {
                   </li>
                 ))}
               </ul>
-              <Link to={`/copies?game=${scanResult.game.id}`}>
+              <Link to={`/collection/copies?game=${scanResult.game.id}`}>
                 <button>Add another copy</button>
               </Link>
             </>

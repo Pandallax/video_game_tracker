@@ -11,7 +11,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { to: '/', label: 'Dashboard' },
   { to: '/games', label: 'Game List', children: [{ to: '/games/imports', label: 'Imports' }] },
-  { to: '/copies', label: 'Copies' },
+  { to: '/collection', label: 'Collection', children: [{ to: '/collection/copies', label: 'Copies' }] },
   { to: '/sales', label: 'Sales' },
 ]
 

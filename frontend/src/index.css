@@ -1246,3 +1246,289 @@ button:disabled {
 .copy-id-cell {
   white-space: nowrap;
 }
+
+/* ---- Collection analytics ---- */
+
+.collection-page h2 {
+  margin-bottom: 1rem;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.kpi {
+  background: #171a21;
+  border: 1px solid #262b36;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.kpi-label {
+  font-size: 0.78rem;
+  color: #8a93a3;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kpi-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #e6e8eb;
+}
+
+.kpi-value .gain {
+  font-size: inherit;
+}
+
+.tile-note {
+  font-size: 0.8rem;
+  color: #8a93a3;
+}
+
+.tile-link {
+  color: #6f9cf0;
+  text-decoration: none;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.chart-card {
+  background: #171a21;
+  border: 1px solid #262b36;
+  border-radius: 10px;
+  padding: 0.9rem 1rem 1rem;
+  min-width: 0;
+}
+
+.chart-card + .chart-card {
+  margin-top: 0;
+}
+
+.chart-card h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.section-head h3 {
+  margin: 0;
+}
+
+.chart-note {
+  font-size: 0.8rem;
+  margin: 0.6rem 0 0;
+}
+
+/* Gain/loss: the value stays in text ink; the arrow carries the direction (with the sign). */
+.gain {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.gain-icon {
+  font-size: 0.7em;
+}
+
+.gain-up .gain-icon {
+  color: #3fb27f;
+}
+
+.gain-down .gain-icon {
+  color: #e66767;
+}
+
+.gain-flat .gain-icon {
+  color: #8a93a3;
+}
+
+.gain-pct {
+  font-size: 0.78em;
+  color: #8a93a3;
+}
+
+.data-table th.num,
+.data-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table.compact th,
+.data-table.compact td {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+.value-table td {
+  vertical-align: middle;
+}
+
+.value-row.edition-platinum td:first-child {
+  box-shadow: inset 3px 0 0 #c9d0d8;
+}
+
+.value-row.edition-other td:first-child {
+  box-shadow: inset 3px 0 0 #7d5cd6;
+}
+
+.row-toggle {
+  background: none;
+  border: none;
+  color: #e6e8eb;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row-caret {
+  display: inline-block;
+  width: 1rem;
+  color: #8a93a3;
+}
+
+.value-subrow td {
+  background: #13161c;
+  font-size: 0.88rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+.value-subrow a {
+  color: #6f9cf0;
+  text-decoration: none;
+}
+
+/* ---- Spending chart ---- */
+
+.spend-chart {
+  position: relative;
+  width: 100%;
+}
+
+.spend-chart svg {
+  display: block;
+  overflow: visible;
+}
+
+.spend-grid {
+  stroke: #262b36;
+  stroke-width: 1;
+}
+
+.spend-baseline {
+  stroke: #4a5160;
+  stroke-width: 1;
+}
+
+.spend-axis {
+  fill: #8a93a3;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.spend-value {
+  fill: #c9d0d8;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.spend-bar {
+  fill: #3987e5;
+}
+
+.spend-col {
+  cursor: default;
+  outline: none;
+}
+
+.spend-col.active .spend-bar {
+  fill: #5c9ff0;
+}
+
+.spend-col:focus-visible rect {
+  stroke: #6f9cf0;
+  stroke-width: 1;
+}
+
+.spend-tooltip {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  background: #0b0d11;
+  border: 1px solid #2c3240;
+  border-radius: 6px;
+  padding: 0.35rem 0.55rem;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.spend-tooltip strong {
+  font-size: 0.95rem;
+  color: #f0efec;
+}
+
+.spend-tooltip span {
+  font-size: 0.75rem;
+  color: #aab2c0;
+}
+
+.chart-table {
+  margin-top: 0.5rem;
+}
+
+.chart-table summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: #8a93a3;
+}
+
+.chart-table table {
+  margin-top: 0.4rem;
+  max-width: 360px;
+}
+
+.section-head select {
+  background: #0f1115;
+  border: 1px solid #333;
+  color: #e6e8eb;
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+
+@media (max-width: 700px) {
+  .kpi-value {
+    font-size: 1.3rem;
+  }
+
+  .analytics-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
