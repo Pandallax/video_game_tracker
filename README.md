@@ -55,7 +55,16 @@ cd backend
   stored directly. First copy of a title goes to Collection; duplicates go
   For Sale (the app picks this automatically unless you choose).
 
-Adding a copy (Copies page): pick the platform, type to find the game on that
+**Collection** (`/collection`) is the analytics page for what you own
+(Collection + For Sale; Sold is left out), filterable by platform and status:
+total spent, current value (each copy valued at the game's Loose / CIB /
+Sealed / Box-only / Manual-only price for exactly what it includes), gain or
+loss over copies that have both a price paid and a value, spending by month,
+a per-platform breakdown, and a searchable/sortable per-game table of paid vs
+value that expands to each copy. Copies live under it at `/collection/copies`
+(old `/copies` links redirect).
+
+Adding a copy (Collection → Copies): pick the platform, type to find the game on that
 platform, then record what you have (sealed, or disc / case / manual each
 with an optional 1-10 quality) and the purchase details. Copy ID is the next
 number in your existing series unless you type one. Price and quality can be

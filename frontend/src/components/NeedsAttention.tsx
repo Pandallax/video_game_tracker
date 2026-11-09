@@ -31,7 +31,7 @@ function AttentionList({ title, empty, copies, gamesById, detail }: ListProps) {
               const game = c.game_id != null ? gamesById.get(c.game_id) : undefined
               return (
                 <li key={c.id}>
-                  <Link to={`/copies?edit=${c.id}`} className="attention-item">
+                  <Link to={`/collection/copies?edit=${c.id}`} className="attention-item">
                     <Cover url={c.photo_url ?? game?.cover_url} title={c.game_title ?? c.copy_id} size="thumb" />
                     <span className="attention-text">
                       <span className="attention-title">{c.game_title ?? 'Unknown game'}</span>
