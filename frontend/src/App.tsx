@@ -5,6 +5,7 @@ import { AppLayout } from './components/AppLayout'
 import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { GamesPage } from './pages/GamesPage'
+import { AchievementsPage } from './pages/AchievementsPage'
 import { ImportsPage } from './pages/ImportsPage'
 import { CopiesPage } from './pages/CopiesPage'
 import { CollectionPage } from './pages/CollectionPage'
@@ -27,6 +28,7 @@ export default function App() {
               <Route path="/" element={<DashboardPage />} />
               <Route path="/games" element={<GamesPage />} />
               <Route path="/games/imports" element={<ImportsPage />} />
+              <Route path="/games/:gameId/achievements" element={<AchievementsPage />} />
               <Route path="/collection" element={<CollectionPage />} />
               <Route path="/collection/copies" element={<CopiesPage />} />
               <Route path="/copies" element={<RedirectToCopies />} />

@@ -73,6 +73,14 @@ price, and (unsold) copies with no parts recorded or a part not yet graded;
 each links straight to that copy's editor (Edit on the Copies page).
 - **Sales** (table 1376): Sale ID, Copy (link), Sold on, Sale date, Sale
   price, Fees, Shipping cost, Net (formula).
+- **Achievements** (table 1377): Achievement Name, Game (link), Unlocked,
+  Required for Mythic, Notes (e.g. a reminder to record footage for that
+  achievement). Entered manually per game via the "Achievements" button on a
+  Game List row (`/games/:id/achievements`). "Mythic" is this app's equivalent
+  of a Platinum trophy: a game is Mythic once every achievement flagged
+  Required for Mythic is Unlocked (achievements that are missable, multiplayer
+  no longer obtainable, etc. can be left unflagged so they don't block it) --
+  computed on the fly (`backend/app/schemas.py::mythic_status`), not stored.
 
 CIB Price was originally the single "Market price" field (same field id).
 The Copies page shows an estimated value per copy: the Sealed or CIB

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import {
   createGame,
   deleteGame,
@@ -375,6 +376,11 @@ export function GamesPage() {
 
   const viewButtons = (game: Game) => (
     <>
+      <Link to={`/games/${game.id}/achievements`}>
+        <button className="secondary-button" disabled={editingId !== null}>
+          Achievements
+        </button>
+      </Link>
       <button onClick={() => startEdit(game)} disabled={editingId !== null}>
         Edit
       </button>

@@ -203,6 +203,39 @@ class PlatformStats(BaseModel):
     total: int
 
 
+class AchievementOut(BaseModel):
+    id: int
+    name: str
+    game_id: int | None
+    unlocked: bool
+    required_for_mythic: bool
+    notes: str
+
+
+class AchievementCreate(BaseModel):
+    name: str
+    game_id: int
+    unlocked: bool = False
+    required_for_mythic: bool = True
+    notes: str = ""
+
+
+class AchievementUpdate(BaseModel):
+    name: str | None = None
+    unlocked: bool | None = None
+    required_for_mythic: bool | None = None
+    notes: str | None = None
+
+
+class MythicStatus(BaseModel):
+    game_id: int
+    achieved: bool  # True only if there's at least one required achievement and all are unlocked
+    required_total: int
+    required_unlocked: int
+    total: int
+    unlocked: int
+
+
 def normalize_upc(upc: str) -> str:
     """Strip non-digits and leading zeros so UPC-A and its EAN-13 zero-prefixed
     form compare equal (e.g. a scanner reading "0012345678905" vs a label
@@ -354,4 +387,29 @@ def sale_row_to_out(row: dict) -> SaleOut:
         fees=float(row[f.S_FEES]) if row.get(f.S_FEES) else None,
         shipping_cost=float(row[f.S_SHIPPING_COST]) if row.get(f.S_SHIPPING_COST) else None,
         net=float(net["value"]) if isinstance(net, dict) and net.get("value") is not None else net,
+    )
+
+
+def achievement_row_to_out(row: dict) -> AchievementOut:
+    game = row.get(f.A_GAME) or []
+    return AchievementOut(
+        id=row["id"],
+        name=row.get(f.A_NAME) or "",
+        game_id=game[0]["id"] if game else None,
+        unlocked=bool(row.get(f.A_UNLOCKED)),
+        required_for_mythic=bool(row.get(f.A_REQUIRED_FOR_MYTHIC)),
+        notes=row.get(f.A_NOTES) or "",
+    )
+
+
+def mythic_status(game_id: int, achievements: list[AchievementOut]) -> MythicStatus:
+    required = [a for a in achievements if a.required_for_mythic]
+    required_unlocked = sum(1 for a in required if a.unlocked)
+    return MythicStatus(
+        game_id=game_id,
+        achieved=bool(required) and required_unlocked == len(required),
+        required_total=len(required),
+        required_unlocked=required_unlocked,
+        total=len(achievements),
+        unlocked=sum(1 for a in achievements if a.unlocked),
     )

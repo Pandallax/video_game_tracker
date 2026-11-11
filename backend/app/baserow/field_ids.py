@@ -4,6 +4,7 @@ Provisioned via a one-off script; see README for how to regenerate if the schema
 TABLE_GAMES = 1374
 TABLE_COPIES = 1375
 TABLE_SALES = 1376
+TABLE_ACHIEVEMENTS = 1377
 
 # Games (1374)
 G_TITLE = "field_14833"
@@ -75,3 +76,10 @@ SOLD_ON_OPTIONS = {
     "Other": 3874,
 }
 SOLD_ON_OPTIONS_BY_ID = {v: k for k, v in SOLD_ON_OPTIONS.items()}
+
+# Achievements (1377)
+A_NAME = "field_14882"
+A_GAME = "field_14885"
+A_UNLOCKED = "field_14887"
+A_REQUIRED_FOR_MYTHIC = "field_14888"
+A_NOTES = "field_14889"
