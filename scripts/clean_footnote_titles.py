@@ -33,7 +33,11 @@ FOOTNOTE_RE = re.compile(r"\s*\[\s*(?:note\s+\d+|broken anchor)\s*\]", re.IGNORE
 BATCH_SIZE = 100
 
 
-def clean_title(title: str) -> str:
+def clean_title(title: str) -> str | None:
+    """The footnote-stripped title, or None if there was no footnote marker to
+    strip (so unrelated whitespace quirks elsewhere in a title aren't touched)."""
+    if not FOOTNOTE_RE.search(title):
+        return None
     return " ".join(FOOTNOTE_RE.sub("", title).split())
 
 
@@ -54,7 +58,7 @@ async def main() -> int:
         for row in platform_rows:
             title = row.get(f.G_TITLE) or ""
             cleaned = clean_title(title)
-            if cleaned == title:
+            if cleaned is None:
                 continue
             norm = normalize(cleaned)
             other_titles = existing_norms - {normalize(title)}
