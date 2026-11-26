@@ -7,7 +7,6 @@ from app.config import settings
 from app.routes.achievements import router as achievements_router
 from app.routes.copies import router as copies_router
 from app.routes.games import router as games_router
-from app.routes.imports import router as imports_router
 from app.routes.sales import router as sales_router
 from app.routes.stats import router as stats_router
 
@@ -28,7 +27,6 @@ app.include_router(games_router)
 app.include_router(copies_router)
 app.include_router(sales_router)
 app.include_router(stats_router)
-app.include_router(imports_router)
 app.include_router(achievements_router)
 
 

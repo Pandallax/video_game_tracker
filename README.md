@@ -121,26 +121,37 @@ an image link, or edit the field in Baserow) or automatically from
 Completionator (see below). Each game links to a PriceCharting search
 for that title and console.
 
-**Import from Completionator** (Game List → Imports page, `/games/imports`): fetches Completionator's
-OG Xbox NTSC-U physical checklist directly from its public, robots.txt-allowed
-checklist endpoint (the same call the checklist page makes; a browser "Save
-Page As" can't capture it because the table loads after the page), matches it
-to the Games table by title + edition, and fills Loose / CIB / Sealed prices,
-box art for that exact printing and Editions. Titles are read from the game
-link only (Completionator shows a "goals available" badge beside some names);
-rows an earlier import created with that suffix are renamed, or removed when
-they duplicate an existing game and have no copies. By default
-it only fills empty fields; "Replace existing" options overwrite. **Preview**
-shows the counts without writing; **Run import** writes. It runs as a
-background job on the backend (`backend/app/completionator.py`,
-`app/routes/imports.py`), so the page just polls for the result. Checklist
-editions that aren't options on the Editions field are listed so you can add
-them in Baserow and run again. Only covers OG Xbox -- Completionator has no
-360/One/Series X checklist yet.
-
-`scripts/import_completionator.py` is the same import from the command line
-(on the VM: `cd backend && ./.venv/bin/python ../scripts/import_completionator.py --all`);
+**Import from Completionator** (`scripts/import_completionator.py`, CLI-only -- the
+Dashboard import panel was removed once the OG Xbox catalog was complete):
+fetches Completionator's OG Xbox NTSC-U physical checklist directly from its
+public, robots.txt-allowed checklist endpoint (the same call the checklist
+page makes; a browser "Save Page As" can't capture it because the table loads
+after the page), matches it to the Games table by title + edition, and fills
+Loose / CIB / Sealed prices, box art for that exact printing and Editions.
+Titles are read from the game link only (Completionator shows a "goals
+available" badge beside some names); rows an earlier import created with that
+suffix are renamed, or removed when they duplicate an existing game and have
+no copies. By default it only fills empty fields; pass flags to overwrite.
+Run it on the VM: `cd backend && ./.venv/bin/python ../scripts/import_completionator.py --all`;
 it also writes completionator_report.csv. See its docstring for the flags.
+The matching/planning logic lives in `backend/app/completionator.py`. Only
+covers OG Xbox -- Completionator has no 360/One/Series X checklist.
+
+**Import from PriceCharting** (`scripts/import_pricecharting.py`, CLI-only, one-time):
+fills Xbox 360 Loose / CIB / Sealed prices, box art and Editions the same way,
+but from PriceCharting instead of Completionator (which has no Xbox 360
+checklist). PriceCharting's bulk CSV/API need a paid "Legendary" subscription,
+so this walks its public, non-API `/console/xbox-360` listing page instead,
+paginating via the cursor-based "more results" form its own page JS uses
+(`backend/app/pricecharting.py::fetch_console`); robots.txt allows this (it
+only disallows `/stripe-connect`, `/publish-offer`, `/buy`), but it's a
+different data path from their paid, internal-use-only API/CSV -- for this
+collection's personal one-time use only, not for resale or republishing. Run
+it on the VM: `cd backend && ./.venv/bin/python ../scripts/import_pricecharting.py --all`;
+it also writes pricecharting_report.csv. The Xbox 360 catalog (titles) is
+already populated from Wikipedia (`scripts/import_catalog.py`), so this
+script has no `--add-missing` -- most of PriceCharting's "missing" entries
+are hardware/bundles that were never games to begin with.
 
 Copies can have their own photo (Copies page: click the thumbnail). Uploads
 are resized to at most 1600px and re-encoded as WebP at 85% quality

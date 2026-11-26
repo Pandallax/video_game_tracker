@@ -4,8 +4,8 @@
 Fetches the checklist from Completionator's public checklist endpoint
 (/CollectionChecklist/SearchPager -- allowed for automated access by their
 robots.txt, and the same call their checklist page makes), identifying itself
-with its own User-Agent. Used by the Dashboard's import panel
-(app/routes/imports.py) and by scripts/import_completionator.py.
+with its own User-Agent. Used by scripts/import_completionator.py (CLI-only;
+the Dashboard's import panel was removed since the OG Xbox catalog is done).
 """
 import difflib
 from collections.abc import Callable

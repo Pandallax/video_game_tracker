@@ -8,12 +8,8 @@ os.environ.setdefault("SESSION_SECRET", "test")
 
 import asyncio
 
-from fastapi.testclient import TestClient
-
 from app.baserow import field_ids as f
 from app.completionator import Entry, ImportOptions, parse_row, plan_updates, run_import
-from app.main import app
-from app.routes import imports
 
 EDITIONS_FIELD = {"id": 99, "name": "Editions", "type": "single_select",
                   "select_options": [{"id": 501, "value": "Platinum Hits"}]}
@@ -102,44 +98,6 @@ def test_run_import_writes_and_adds_missing():
     assert [c[f.G_TITLE] for c in fake.created] == ["Fable"]
     assert {u["id"] for u in fake.updated} == {1, fake.created[0]["id"]}
     assert s.games_updated == 2 and s.added_games == 1
-
-
-def test_import_endpoints_require_auth():
-    client = TestClient(app)
-    assert client.get("/api/import/completionator").status_code == 401
-    assert client.post("/api/import/completionator", json={}).status_code == 401
-
-
-def test_job_runs_in_background(monkeypatch):
-    async def fake_run_import(options):
-        return await run_import(options, client=FakeBaserow([{"id": 1, f.G_TITLE: "Halo", f.G_PLATFORM: OG}]),
-                                entries=[entry("Halo")])
-
-    monkeypatch.setattr(imports, "run_import", fake_run_import)
-
-    async def scenario():
-        job = await imports.start_import(ImportOptions())
-        assert job.status == "running"
-        await imports._task
-        return await imports.import_status()
-
-    done = asyncio.run(scenario())
-    assert done.status == "done" and done.summary.matched == 1 and done.summary.dry_run
-
-
-def test_job_reports_errors(monkeypatch):
-    async def boom(options):
-        raise RuntimeError("Completionator unreachable")
-
-    monkeypatch.setattr(imports, "run_import", boom)
-
-    async def scenario():
-        await imports.start_import(ImportOptions())
-        await imports._task
-        return await imports.import_status()
-
-    failed = asyncio.run(scenario())
-    assert failed.status == "error" and "unreachable" in failed.error
 
 
 def test_edition_whitespace_collapsed():
